@@ -4,4 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "brainrender-napari>=0.1.4",
+    "napari[pyqt6]>=0.7.0",
+]
