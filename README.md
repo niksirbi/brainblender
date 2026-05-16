@@ -41,6 +41,10 @@ This creates a directory with one `.ply` file per region and a `manifest.json` d
 
 ### Import into Blender
 
+This step requires the `blender` command to be available in your terminal.
+See the [Blender docs on launching from the command line](https://docs.blender.org/manual/en/latest/advanced/command_line/launch/index.html)
+for platform-specific instructions.
+
 ```bash
 blender --python brainblender/blender/import_meshes.py -- ./meshes/
 ```
