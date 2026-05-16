@@ -2,7 +2,7 @@
 
 ## Project overview
 
-**brainblender** is a Python tool for visualising brain surface meshes in Blender. It uses the [BrainGlobe Atlas API](https://brainglobe.info/) to fetch brain region meshes and is in early development (v0.1.0).
+**brainblender** is a Python tool for visualising BrainGlobe atlas meshes in Blender. It uses the [BrainGlobe Atlas API](https://brainglobe.info/) to fetch brain region meshes and is in early development.
 
 ## Tech stack
 

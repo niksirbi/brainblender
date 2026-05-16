@@ -1,1 +1,1 @@
-"""Brain surface mesh visualisation for Blender."""
+"""Visualise BrainGlobe atlas meshes in Blender."""

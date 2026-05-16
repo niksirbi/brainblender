@@ -1,5 +1,5 @@
 # brainblender
-Playground for visualising brain surface meshes in blender
+Visualise BrainGlobe atlas meshes in Blender.
 
 ## Installation
 
