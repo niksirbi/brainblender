@@ -96,12 +96,14 @@ source = { virtual = "." }
 dependencies = [
     { name = "brainrender-napari" },
     { name = "napari", extra = ["pyqt6"] },
+    { name = "typer" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "brainrender-napari", specifier = ">=0.1.4" },
     { name = "napari", extras = ["pyqt6"], specifier = ">=0.7.0" },
+    { name = "typer", specifier = ">=0.25.1" },
 ]
 
 [[package]]
