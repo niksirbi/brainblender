@@ -31,7 +31,8 @@ def frame_viewport() -> None:
     bpy.ops.object.select_all(action="SELECT")
     for area in bpy.context.screen.areas:
         if area.type == "VIEW_3D":
-            with bpy.context.temp_override(area=area):
+            region = next(r for r in area.regions if r.type == "WINDOW")
+            with bpy.context.temp_override(area=area, region=region):
                 bpy.ops.view3d.view_selected()
             break
 

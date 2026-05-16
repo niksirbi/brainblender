@@ -34,7 +34,15 @@ def normalize(
 
     """
     atlas_center_um = np.array(shape) * np.array(resolution) / 2.0
-    mesh.vertices = (mesh.vertices - atlas_center_um) / 1000.0
+    vertices = (mesh.vertices - atlas_center_um) / 1000.0
+
+    # Reorient from BrainGlobe ASR (X=A→P, Y=S→I, Z=R→L)
+    # to Blender convention (X=right, Y=forward, Z=up)
+    reoriented = np.empty_like(vertices)
+    reoriented[:, 0] = vertices[:, 2]  # Blender X = Atlas Z
+    reoriented[:, 1] = -vertices[:, 0]  # Blender Y = -Atlas X (Anterior)
+    reoriented[:, 2] = -vertices[:, 1]  # Blender Z = -Atlas Y (Superior)
+    mesh.vertices = reoriented
     return mesh
 
 
