@@ -20,11 +20,29 @@ def create_material(name: str, color_rgb: list[int]) -> bpy.types.Material:
     return mat
 
 
+def clear_default_scene() -> None:
+    """Remove all default objects (Cube, Camera, Light) from the scene."""
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete()
+
+
+def frame_viewport() -> None:
+    """Frame all objects in the 3D viewport."""
+    bpy.ops.object.select_all(action="SELECT")
+    for area in bpy.context.screen.areas:
+        if area.type == "VIEW_3D":
+            with bpy.context.temp_override(area=area):
+                bpy.ops.view3d.view_selected()
+            break
+
+
 def import_meshes(meshes_dir: Path) -> None:
     """Import all meshes from a brainblender export directory."""
     manifest_path = meshes_dir / "manifest.json"
     with manifest_path.open() as f:
         manifest = json.load(f)
+
+    clear_default_scene()
 
     atlas_name = manifest["atlas"]
     collection = bpy.data.collections.new(atlas_name)
@@ -41,11 +59,11 @@ def import_meshes(meshes_dir: Path) -> None:
         obj.data.materials.clear()
         obj.data.materials.append(mat)
 
-        # Move from default collection to atlas collection
         for col in obj.users_collection:
             col.objects.unlink(obj)
         collection.objects.link(obj)
 
+    frame_viewport()
     print(f"Imported {len(manifest['regions'])} regions from '{atlas_name}'")
 
 

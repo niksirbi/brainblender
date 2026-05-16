@@ -8,6 +8,7 @@ import typer
 from brainblender.atlas import get_region_metadata, load_atlas, resolve_regions
 from brainblender.export import export_all
 from brainblender.mesh import decimate as decimate_mesh
+from brainblender.mesh import normalize as normalize_mesh
 from brainblender.mesh import smooth as smooth_mesh
 from brainblender.mesh import to_trimesh
 
@@ -106,6 +107,7 @@ def export(
         typer.echo(f"  {acronym}...", nl=False)
         raw_mesh = atlas.mesh_from_structure(acronym)
         mesh = to_trimesh(raw_mesh.points, raw_mesh.cells[0].data)
+        mesh = normalize_mesh(mesh, atlas.resolution, atlas.shape)
 
         if smooth_iterations > 0:
             mesh = smooth_mesh(mesh, iterations=smooth_iterations, method=smooth_method)  # type: ignore[arg-type]

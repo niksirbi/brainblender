@@ -7,6 +7,37 @@ import trimesh
 import trimesh.smoothing
 
 
+def normalize(
+    mesh: trimesh.Trimesh,
+    resolution: tuple[float, ...],
+    shape: tuple[int, ...],
+) -> trimesh.Trimesh:
+    """Normalize mesh coordinates from atlas space to mm, centered at origin.
+
+    Atlas meshes from BrainGlobe have coordinates in micrometers
+    (voxel index x resolution). This converts to millimeters and centers
+    the mesh relative to the atlas volume center.
+
+    Parameters
+    ----------
+    mesh:
+        Mesh with coordinates in micrometers.
+    resolution:
+        Atlas voxel resolution in micrometers per axis.
+    shape:
+        Atlas volume shape in voxels per axis.
+
+    Returns
+    -------
+    trimesh.Trimesh
+        The mesh with coordinates in mm, centered at origin.
+
+    """
+    atlas_center_um = np.array(shape) * np.array(resolution) / 2.0
+    mesh.vertices = (mesh.vertices - atlas_center_um) / 1000.0
+    return mesh
+
+
 def to_trimesh(vertices: np.ndarray, faces: np.ndarray) -> trimesh.Trimesh:
     """Convert raw vertex and face arrays to a trimesh object.
 
