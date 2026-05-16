@@ -1,3 +1,5 @@
+"""CLI commands for brainblender."""
+
 import meshio
 import typer
 from brainglobe_atlasapi import BrainGlobeAtlas
@@ -19,12 +21,18 @@ def fetch_region_mesh(atlas: BrainGlobeAtlas, region: str | int) -> meshio.Mesh:
     -------
     meshio.Mesh
         The region mesh with vertices and triangle faces.
+
     """
     return atlas.mesh_from_structure(region)
 
 
 @app.command()
-def main(atlas_name: str = typer.Argument(..., help="BrainGlobe atlas name, e.g. 'eurasian_blackcap_25um'")):
+def main(
+    atlas_name: str = typer.Argument(
+        ..., help="BrainGlobe atlas name, e.g. 'eurasian_blackcap_25um'"
+    ),
+):
+    """Print metadata and root mesh statistics for a BrainGlobe atlas."""
     print(f"Loading atlas '{atlas_name}'...")
     atlas = BrainGlobeAtlas(atlas_name, check_latest=False)
 
@@ -38,7 +46,3 @@ def main(atlas_name: str = typer.Argument(..., help="BrainGlobe atlas name, e.g.
     num_vertices = len(root_mesh.points)
     num_faces = len(root_mesh.cells[0].data)
     print(f"Root mesh:   {num_vertices} vertices, {num_faces} faces")
-
-
-if __name__ == "__main__":
-    app()

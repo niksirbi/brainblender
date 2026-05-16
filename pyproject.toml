@@ -1,11 +1,74 @@
 [project]
 name = "brainblender"
-version = "0.1.0"
-description = "Add your description here"
+description = "A Python tool for visualising brain surface meshes in Blender"
 readme = "README.md"
 requires-python = ">=3.11"
+dynamic = ["version"]
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 dependencies = [
     "brainrender-napari>=0.1.4",
     "napari[pyqt6]>=0.7.0",
     "typer>=0.25.1",
 ]
+
+[project.scripts]
+brainblender = "brainblender.cli:app"
+
+[dependency-groups]
+dev = [
+    "mypy",
+    "pre-commit",
+    "ruff",
+    "codespell",
+    "setuptools_scm",
+]
+
+[build-system]
+requires = ["setuptools>=77", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["brainblender*"]
+
+[tool.setuptools_scm]
+
+[tool.mypy]
+exclude = ["tests/", "docs/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "brainglobe_atlasapi.*",
+    "meshio.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+exclude = ["__init__.py", "build", ".eggs"]
+fix = true
+
+[tool.ruff.lint]
+ignore = [
+    "D203", # one blank line before class
+    "D213", # multi-line-summary second line
+]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "UP",  # pyupgrade
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "TC",  # flake8-type-checking
+    "C90", # McCabe complexity
+    "D",   # pydocstyle
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.codespell]
+skip = ".git,.tox"
+check-hidden = true
