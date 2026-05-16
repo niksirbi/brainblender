@@ -7,8 +7,9 @@ dynamic = ["version"]
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 dependencies = [
-    "brainrender-napari>=0.1.4",
-    "napari[pyqt6]>=0.7.0",
+    "brainglobe-atlasapi>=2.0.0",
+    "fast-simplification",
+    "trimesh>=4.12.2",
     "typer>=0.25.1",
 ]
 
@@ -40,6 +41,8 @@ exclude = ["tests/", "docs/"]
 module = [
     "brainglobe_atlasapi.*",
     "meshio.*",
+    "trimesh.*",
+    "fast_simplification.*",
 ]
 ignore_missing_imports = true
 
