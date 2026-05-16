@@ -20,6 +20,19 @@ def load_atlas(atlas_name: str) -> BrainGlobeAtlas:
     return BrainGlobeAtlas(atlas_name, check_latest=False)
 
 
+def _get_regions_at_depth(atlas: BrainGlobeAtlas, parent: str, depth: int) -> list[str]:
+    """Get region acronyms at exactly `depth` levels below parent."""
+    parent_id = atlas.structures[parent]["id"]
+    current_level = [parent_id]
+    for _ in range(depth):
+        next_level: list[int] = []
+        for region_id in current_level:
+            children = atlas.hierarchy.children(region_id)
+            next_level.extend(child.identifier for child in children)
+        current_level = next_level
+    return [atlas.structures[rid]["acronym"] for rid in current_level]
+
+
 def resolve_regions(
     atlas: BrainGlobeAtlas,
     regions: list[str] | None = None,
@@ -56,10 +69,7 @@ def resolve_regions(
         if depth is None:
             descendants = atlas.get_structure_descendants(children_of)
         else:
-            # API uses 1-indexed levels where 1=self, 2=children, etc.
-            descendants = atlas.get_structures_at_hierarchy_level(
-                children_of, hierarchy_level=depth + 1, as_acronym=True
-            )
+            descendants = _get_regions_at_depth(atlas, children_of, depth)
         result.update(descendants)
 
     return sorted(result)
