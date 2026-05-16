@@ -51,4 +51,14 @@ blender --python brainblender/blender/import_meshes.py -- ./meshes/
 
 This imports all exported meshes, assigns material colors from the atlas, and groups them into a collection.
 
+## Examples
+
+See the `examples/` directory for complete workflow scripts, e.g.:
+
+```bash
+bash examples/render-root-mesh.sh
+```
+
+## Resources
+
 See all available [BrainGlobe atlases](https://brainglobe.info/documentation/brainglobe-atlasapi/index.html).

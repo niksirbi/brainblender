@@ -19,11 +19,12 @@ brainblender/
   __init__.py        # Package init
   cli.py             # CLI subcommands: info, list-regions, export
   atlas.py           # Atlas loading and region selection (explicit + hierarchy)
-  mesh.py            # Smoothing and decimation wrappers (trimesh)
+  mesh.py            # Smoothing, decimation, and normalization (trimesh)
   export.py          # PLY export + manifest.json writing
   blender/
     __init__.py
     import_meshes.py # Standalone Blender script (bpy + stdlib only)
+examples/            # Complete workflow scripts
 pyproject.toml       # Project metadata, dependencies, and tool config
 uv.lock              # Locked dependencies
 .pre-commit-config.yaml  # Pre-commit hook configuration
