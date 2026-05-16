@@ -9,15 +9,21 @@
 - Python 3.11+, managed with `uv`
 - CLI via `typer`
 - Brain atlas data via `brainglobe-atlasapi`
-- Mesh handling via `meshio`
-- Visualization via `napari` with PyQt6
+- Mesh processing via `trimesh` + `fast-simplification`
+- Blender import via standalone `bpy` script
 
 ## Project structure
 
 ```
-brainblender/        # Python package
+brainblender/
   __init__.py        # Package init
-  cli.py             # CLI commands and mesh-fetching logic
+  cli.py             # CLI subcommands: info, list-regions, export
+  atlas.py           # Atlas loading and region selection (explicit + hierarchy)
+  mesh.py            # Smoothing and decimation wrappers (trimesh)
+  export.py          # PLY export + manifest.json writing
+  blender/
+    __init__.py
+    import_meshes.py # Standalone Blender script (bpy + stdlib only)
 pyproject.toml       # Project metadata, dependencies, and tool config
 uv.lock              # Locked dependencies
 .pre-commit-config.yaml  # Pre-commit hook configuration
@@ -26,7 +32,10 @@ uv.lock              # Locked dependencies
 ## Development commands
 
 ```bash
-uv run brainblender <atlas_name>      # Run the CLI (e.g. 'eurasian_blackcap_25um')
+uv run brainblender info <atlas>                     # Print atlas metadata
+uv run brainblender list-regions <atlas> --depth 2   # Show region tree
+uv run brainblender export <atlas> --regions root --decimate 0.5 --smooth 3  # Export pipeline
+blender --python brainblender/blender/import_meshes.py -- ./meshes/  # Load into Blender
 uv sync --group dev                   # Install dependencies including dev tools
 uv run pre-commit install             # Set up pre-commit hooks (once after cloning)
 uv run pre-commit run --all-files     # Run all hooks manually
