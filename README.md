@@ -47,6 +47,9 @@ uv run brainblender info eurasian_blackcap_25um
 
 ```bash
 uv run brainblender list-regions eurasian_blackcap_25um --depth 2
+
+# Show the tree below a specific region
+uv run brainblender list-regions allen_mouse_25um --children-of grey --depth 2
 ```
 
 ### Export meshes

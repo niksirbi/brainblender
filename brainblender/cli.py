@@ -34,9 +34,12 @@ def info(
 @app.command()
 def list_regions(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
-    depth: Annotated[int, typer.Option(help="Maximum tree depth to display")] = 2,
-    root: Annotated[
-        str, typer.Option(help="Root region to start the tree from")
+    depth: Annotated[
+        int, typer.Option(help="Levels to show below the starting region")
+    ] = 2,
+    children_of: Annotated[
+        str,
+        typer.Option(help="Region to start the tree from"),
     ] = "root",
 ) -> None:
     """Print region hierarchy as an indented tree."""
@@ -56,8 +59,7 @@ def list_regions(
         for child in children:
             _print_tree(child.identifier, current_depth + 1)
 
-    root_structure = atlas.structures[root]
-    _print_tree(root_structure["id"], 0)
+    _print_tree(atlas.structures[children_of]["id"], 0)
 
 
 @app.command()
