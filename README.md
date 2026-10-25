@@ -54,11 +54,11 @@ uv run brainblender list-regions allen_mouse_25um --children-of grey --depth 2
 
 ### Export meshes
 
-Fetch, smooth, decimate, and export region meshes as PLY files:
+Fetch, decimate, smooth, and export region meshes as PLY files:
 
 ```bash
 # Export specific regions
-uv run brainblender export eurasian_blackcap_25um --regions root,HVC,RA --decimate 0.5 --smooth 3
+uv run brainblender export eurasian_blackcap_25um --regions root,HVC,RA
 
 # Export all children of a region
 uv run brainblender export eurasian_blackcap_25um --children-of root --depth 1 --output ./level1_meshes
@@ -69,6 +69,12 @@ Where a branch ends sooner, its leaf is taken instead, so the selection matches 
 `list-regions --children-of <parent> --depth N` prints and covers the whole parent region.
 
 This creates a directory with one `.ply` file per region and a `manifest.json` describing the export.
+
+By default, meshes with more than 100,000 faces are decimated down to that number,
+and every mesh then gets 5 iterations of Taubin smoothing.
+The intention is to leave light, clean meshes almost untouched while cleaning up very dense ones.
+Override these defaults with `--max-faces` (`0` turns decimation off)
+and `--smooth` (`0` turns smoothing off).
 
 ### Import into Blender
 

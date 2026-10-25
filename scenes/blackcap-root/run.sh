@@ -18,8 +18,6 @@ fi
 
 uv run --project "$REPO_ROOT" brainblender export eurasian_blackcap_25um \
     --regions root \
-    --decimate 0.5 \
-    --smooth 3 \
     --output "$MESHES_DIR"
 
 "$BLENDER" --background \

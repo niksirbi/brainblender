@@ -84,14 +84,20 @@ def export(
             help="Levels below --children-of (shallower leaves included)",
         ),
     ] = None,
-    decimate_ratio: Annotated[
-        float | None,
-        typer.Option("--decimate", "-d", help="Decimation ratio (0.0-1.0)"),
-    ] = None,
+    max_faces: Annotated[
+        int,
+        typer.Option(
+            "--max-faces",
+            "-f",
+            help="Decimate meshes with more faces than this (0=never)",
+        ),
+    ] = 100_000,
     smooth_iterations: Annotated[
         int,
-        typer.Option("--smooth", "-s", help="Smoothing iterations (0=none)"),
-    ] = 0,
+        typer.Option(
+            "--smooth", "-s", help="Smoothing iterations, after decimation (0=none)"
+        ),
+    ] = 5,
     smooth_method: Annotated[
         str, typer.Option(help="Smoothing method: taubin, laplacian, humphrey")
     ] = "taubin",
@@ -120,19 +126,20 @@ def export(
         mesh = to_trimesh(raw_mesh.points, raw_mesh.cells[0].data)
         mesh = normalize_mesh(mesh, atlas.resolution, atlas.shape)
 
+        # Decimate first so smoothing acts at a similar scale on every mesh
+        if max_faces > 0:
+            mesh = decimate_mesh(mesh, max_faces=max_faces)
         if smooth_iterations > 0:
             mesh = smooth_mesh(mesh, iterations=smooth_iterations, method=smooth_method)  # type: ignore[arg-type]
-        if decimate_ratio is not None:
-            mesh = decimate_mesh(mesh, ratio=decimate_ratio)
 
         metadata = get_region_metadata(atlas, acronym)
         meshes.append((metadata, mesh))
         typer.echo(f" {len(mesh.vertices)} verts, {len(mesh.faces)} faces")
 
     processing = {
+        "max_faces": max_faces or None,
         "smoothing_iterations": smooth_iterations,
         "smoothing_method": smooth_method if smooth_iterations > 0 else None,
-        "decimation_ratio": decimate_ratio,
     }
     export_all(
         output_dir=output,
