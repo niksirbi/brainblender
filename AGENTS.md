@@ -45,6 +45,7 @@ uv sync --group dev                   # Install dependencies including dev tools
 uv run pre-commit install             # Set up pre-commit hooks (once after cloning)
 uv run pre-commit run --all-files     # Run all hooks manually
 uv run mypy brainblender/             # Type-check
+uv run pytest                         # Run tests
 uv run ruff check brainblender/       # Lint
 uv run ruff format brainblender/      # Format
 ```

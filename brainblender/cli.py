@@ -79,7 +79,10 @@ def export(
     ] = None,
     hierarchy_depth: Annotated[
         int | None,
-        typer.Option("--depth", help="Hierarchy depth for --children-of"),
+        typer.Option(
+            "--depth",
+            help="Levels below --children-of (shallower leaves included)",
+        ),
     ] = None,
     decimate_ratio: Annotated[
         float | None,

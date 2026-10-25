@@ -64,6 +64,10 @@ uv run brainblender export eurasian_blackcap_25um --regions root,HVC,RA --decima
 uv run brainblender export eurasian_blackcap_25um --children-of root --depth 1 --output ./level1_meshes
 ```
 
+With `--children-of` and `--depth N`, the export takes the regions `N` levels below the parent.
+Where a branch ends sooner, its leaf is taken instead, so the selection matches the leaves of the tree
+`list-regions --children-of <parent> --depth N` prints and covers the whole parent region.
+
 This creates a directory with one `.ply` file per region and a `manifest.json` describing the export.
 
 ### Import into Blender

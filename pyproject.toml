@@ -22,6 +22,7 @@ dev = [
     "pre-commit",
     "ruff",
     "codespell",
+    "pytest>=9.1.1",
     "setuptools_scm",
 ]
 
