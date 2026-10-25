@@ -24,7 +24,11 @@ brainblender/
   blender/
     __init__.py
     import_meshes.py # Standalone Blender script (bpy + stdlib only)
-examples/            # Complete workflow scripts
+scenes/<name>/       # One folder per scene workflow
+  run.sh             # Export meshes (uv/CLI), then launch Blender with scene.py
+  scene.py           # Runs inside Blender (bpy); reuses brainblender/blender helpers
+                     # Scene data (meshes/, renders/) lives in $BRAINBLENDER_SCENES_DIR/<name>/
+                     # (default ~/brainblender-scenes; set per machine, see README)
 pyproject.toml       # Project metadata, dependencies, and tool config
 uv.lock              # Locked dependencies
 .pre-commit-config.yaml  # Pre-commit hook configuration
