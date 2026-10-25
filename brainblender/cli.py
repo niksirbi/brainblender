@@ -67,7 +67,11 @@ def export(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
     regions: Annotated[
         list[str] | None,
-        typer.Option("--regions", "-r", help="Region acronyms to export"),
+        typer.Option(
+            "--regions",
+            "-r",
+            help="Region acronyms to export (comma-separated or repeated)",
+        ),
     ] = None,
     children_of: Annotated[
         str | None,
@@ -95,6 +99,8 @@ def export(
     """Fetch, process, and export region meshes as PLY files."""
     atlas = load_atlas(atlas_name)
 
+    if regions:
+        regions = [r for value in regions for r in value.split(",") if r]
     acronyms = resolve_regions(
         atlas, regions=regions, children_of=children_of, depth=hierarchy_depth
     )
