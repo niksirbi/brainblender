@@ -24,6 +24,7 @@ brainblender/
   blender/
     __init__.py
     import_meshes.py # Standalone Blender script (bpy + stdlib only)
+    scene_setup.py   # Shared scene helpers: directions, camera, light, render
 scenes/<name>/       # One folder per scene workflow
   run.sh             # Export meshes (uv/CLI), then launch Blender with scene.py
   scene.py           # Runs inside Blender (bpy); reuses brainblender/blender helpers
