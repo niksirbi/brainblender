@@ -39,10 +39,13 @@ def normalize(
     # Reorient from BrainGlobe ASR (X=A→P, Y=S→I, Z=R→L)
     # to Blender convention (X=right, Y=forward, Z=up)
     reoriented = np.empty_like(vertices)
-    reoriented[:, 0] = vertices[:, 2]  # Blender X = Atlas Z
+    reoriented[:, 0] = -vertices[:, 2]  # Blender X = -Atlas Z (Right)
     reoriented[:, 1] = -vertices[:, 0]  # Blender Y = -Atlas X (Anterior)
     reoriented[:, 2] = -vertices[:, 1]  # Blender Z = -Atlas Y (Superior)
     mesh.vertices = reoriented
+    # ASR is a left-handed frame, so this mapping is a reflection; reverse the
+    # face winding to keep normals pointing outward.
+    mesh.invert()
     return mesh
 
 
