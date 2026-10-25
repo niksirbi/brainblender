@@ -118,6 +118,11 @@ export BLENDER="/Applications/Blender.app/Contents/MacOS/Blender"
 bash scenes/blackcap-root/run.sh
 ```
 
+Available scenes:
+
+- `blackcap-root`: Eurasian blackcap whole-brain surface.
+- `allen-mouse-cortex`: Allen mouse cortical areas three levels below CTX (isocortical, olfactory and hippocampal areas, and cortical subplate subdivisions).
+
 Each scene gets its own subfolder named after the scene, e.g.
 `$BRAINBLENDER_SCENES_DIR/blackcap-root/`, with `meshes/` and `renders/` inside.
 

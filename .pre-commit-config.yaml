@@ -31,7 +31,7 @@ repos:
       rev: v2.4.0
       hooks:
           - id: mypy
-            exclude: ^(tests|docs)/
+            exclude: ^(tests|docs|scenes)/
     - repo: https://github.com/codespell-project/codespell
       rev: v2.4.3
       hooks:

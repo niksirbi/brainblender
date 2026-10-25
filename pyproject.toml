@@ -36,7 +36,7 @@ include = ["brainblender*"]
 [tool.setuptools_scm]
 
 [tool.mypy]
-exclude = ["tests/", "docs/"]
+exclude = ["tests/", "docs/", "scenes/"]
 
 [[tool.mypy.overrides]]
 module = [
