@@ -6,9 +6,9 @@
 
 ## Tech stack
 
-- Python 3.11+, managed with `uv`
+- Python 3.12+, managed with `uv`
 - CLI via `typer`
-- Brain atlas data via `brainglobe-atlasapi`
+- Brain atlas data via `brainglobe-atlasapi` v3 (OME-Zarr atlases on S3, cached in `~/.brainglobe/brainglobe-atlasapi/`)
 - Mesh processing via `trimesh` + `fast-simplification`
 - Blender import via standalone `bpy` script
 
