@@ -21,14 +21,21 @@ def load_atlas(atlas_name: str) -> BrainGlobeAtlas:
 
 
 def _get_regions_at_depth(atlas: BrainGlobeAtlas, parent: str, depth: int) -> list[str]:
-    """Get region acronyms at exactly `depth` levels below parent."""
+    """Get region acronyms `depth` levels below parent.
+
+    Branches that end sooner contribute their leaf instead, so the result is
+    the leaves of the tree `list-regions --depth` prints, covering the whole parent.
+    """
     parent_id = atlas.structures[parent]["id"]
     current_level = [parent_id]
     for _ in range(depth):
         next_level: list[int] = []
         for region_id in current_level:
             children = atlas.hierarchy.children(region_id)
-            next_level.extend(child.identifier for child in children)
+            if children:
+                next_level.extend(child.identifier for child in children)
+            else:
+                next_level.append(region_id)  # leaf above `depth`
         current_level = next_level
     return [atlas.structures[rid]["acronym"] for rid in current_level]
 
@@ -50,7 +57,8 @@ def resolve_regions(
     children_of:
         Parent region acronym for hierarchy-based selection.
     depth:
-        Hierarchy level below `children_of`. None means all descendants.
+        Hierarchy level below `children_of`; leaves above that level are
+        included too. None means all descendants.
 
     Returns
     -------

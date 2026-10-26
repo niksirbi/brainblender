@@ -16,7 +16,7 @@ uv sync
 ### Blender
 
 Blender is installed separately. If you don't have it yet, download it from
-[blender.org](https://www.blender.org/download/) (brainblender is tested with Blender 4.2).
+[blender.org](https://www.blender.org/download/) (brainblender is tested with Blender 5.2).
 
 Then make the `blender` command available in your terminal.
 See the [Blender docs on launching from the command line](https://docs.blender.org/manual/en/latest/advanced/command_line/launch/index.html)
@@ -25,6 +25,16 @@ for platform-specific instructions. Check it works with:
 ```bash
 blender --version
 ```
+
+### Microscopy Nodes (optional)
+
+To load atlas volumes (e.g. the reference template) into Blender alongside the meshes,
+install the [Microscopy Nodes](https://extensions.blender.org/add-ons/microscopynodes/) extension
+from within Blender (Edit → Preferences → Get Extensions).
+
+BrainGlobe atlases are stored as OME-Zarr 0.5 (Zarr v3),
+which needs Microscopy Nodes 2.2.4 or later (Blender 4.4+).
+Tested with Microscopy Nodes 3.1.3 on Blender 5.2.
 
 ## Usage
 
@@ -47,21 +57,34 @@ uv run brainblender info eurasian_blackcap_25um
 
 ```bash
 uv run brainblender list-regions eurasian_blackcap_25um --depth 2
+
+# Show the tree below a specific region
+uv run brainblender list-regions allen_mouse_25um --children-of grey --depth 2
 ```
 
 ### Export meshes
 
-Fetch, smooth, decimate, and export region meshes as PLY files:
+Fetch, decimate, smooth, and export region meshes as PLY files:
 
 ```bash
 # Export specific regions
-uv run brainblender export eurasian_blackcap_25um --regions root,HVC,RA --decimate 0.5 --smooth 3
+uv run brainblender export eurasian_blackcap_25um --regions root,HVC,RA
 
 # Export all children of a region
 uv run brainblender export eurasian_blackcap_25um --children-of root --depth 1 --output ./level1_meshes
 ```
 
+With `--children-of` and `--depth N`, the export takes the regions `N` levels below the parent.
+Where a branch ends sooner, its leaf is taken instead, so the selection matches the leaves of the tree
+`list-regions --children-of <parent> --depth N` prints and covers the whole parent region.
+
 This creates a directory with one `.ply` file per region and a `manifest.json` describing the export.
+
+By default, meshes with more than 100,000 faces are decimated down to that number,
+and every mesh then gets 5 iterations of Taubin smoothing.
+The intention is to leave light, clean meshes almost untouched while cleaning up very dense ones.
+Override these defaults with `--max-faces` (`0` turns decimation off)
+and `--smooth` (`0` turns smoothing off).
 
 ### Import into Blender
 
@@ -104,6 +127,11 @@ export BLENDER="/Applications/Blender.app/Contents/MacOS/Blender"
 ```bash
 bash scenes/blackcap-root/run.sh
 ```
+
+Available scenes:
+
+- `blackcap-root`: Eurasian blackcap whole-brain surface.
+- `allen-mouse-cortex`: Allen mouse cortical areas three levels below CTX (isocortical, olfactory and hippocampal areas, and cortical subplate subdivisions).
 
 Each scene gets its own subfolder named after the scene, e.g.
 `$BRAINBLENDER_SCENES_DIR/blackcap-root/`, with `meshes/` and `renders/` inside.

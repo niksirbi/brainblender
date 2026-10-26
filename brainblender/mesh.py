@@ -102,20 +102,24 @@ def smooth(
     return mesh
 
 
-def decimate(mesh: trimesh.Trimesh, ratio: float = 0.5) -> trimesh.Trimesh:
-    """Decimate a mesh to a fraction of its original face count.
+def decimate(mesh: trimesh.Trimesh, max_faces: int) -> trimesh.Trimesh:
+    """Decimate a mesh down to at most `max_faces` faces.
+
+    Meshes that already have `max_faces` faces or fewer are returned unchanged.
 
     Parameters
     ----------
     mesh:
         The mesh to decimate.
-    ratio:
-        Target ratio of faces to keep (0.0-1.0).
+    max_faces:
+        Maximum number of faces to keep.
 
     Returns
     -------
     trimesh.Trimesh
-        A new decimated mesh.
+        The original mesh, or a new decimated mesh.
 
     """
-    return mesh.simplify_quadric_decimation(percent=ratio)
+    if len(mesh.faces) <= max_faces:
+        return mesh
+    return mesh.simplify_quadric_decimation(face_count=max_faces)

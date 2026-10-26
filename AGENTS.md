@@ -24,6 +24,7 @@ brainblender/
   blender/
     __init__.py
     import_meshes.py # Standalone Blender script (bpy + stdlib only)
+    scene_setup.py   # Shared scene helpers: directions, camera, light, render
 scenes/<name>/       # One folder per scene workflow
   run.sh             # Export meshes (uv/CLI), then launch Blender with scene.py
   scene.py           # Runs inside Blender (bpy); reuses brainblender/blender helpers
@@ -39,12 +40,13 @@ uv.lock              # Locked dependencies
 ```bash
 uv run brainblender info <atlas>                     # Print atlas metadata
 uv run brainblender list-regions <atlas> --depth 2   # Show region tree
-uv run brainblender export <atlas> --regions root --decimate 0.5 --smooth 3  # Export pipeline
+uv run brainblender export <atlas> --regions root  # Export pipeline (--max-faces, --smooth to override defaults)
 blender --python brainblender/blender/import_meshes.py -- ./meshes/  # Load into Blender
 uv sync --group dev                   # Install dependencies including dev tools
 uv run pre-commit install             # Set up pre-commit hooks (once after cloning)
 uv run pre-commit run --all-files     # Run all hooks manually
 uv run mypy brainblender/             # Type-check
+uv run pytest                         # Run tests
 uv run ruff check brainblender/       # Lint
 uv run ruff format brainblender/      # Format
 ```
