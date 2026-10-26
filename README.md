@@ -16,7 +16,7 @@ uv sync
 ### Blender
 
 Blender is installed separately. If you don't have it yet, download it from
-[blender.org](https://www.blender.org/download/) (brainblender is tested with Blender 4.2).
+[blender.org](https://www.blender.org/download/) (brainblender is tested with Blender 5.2).
 
 Then make the `blender` command available in your terminal.
 See the [Blender docs on launching from the command line](https://docs.blender.org/manual/en/latest/advanced/command_line/launch/index.html)
@@ -25,6 +25,16 @@ for platform-specific instructions. Check it works with:
 ```bash
 blender --version
 ```
+
+### Microscopy Nodes (optional)
+
+To load atlas volumes (e.g. the reference template) into Blender alongside the meshes,
+install the [Microscopy Nodes](https://extensions.blender.org/add-ons/microscopynodes/) extension
+from within Blender (Edit → Preferences → Get Extensions).
+
+BrainGlobe atlases are stored as OME-Zarr 0.5 (Zarr v3),
+which needs Microscopy Nodes 2.2.4 or later (Blender 4.4+).
+Tested with Microscopy Nodes 3.1.3 on Blender 5.2.
 
 ## Usage
 
