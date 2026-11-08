@@ -24,6 +24,7 @@ dev = [
     "codespell",
     "pytest>=9.1.1",
     "setuptools_scm",
+    "pillow>=13.0.0",
 ]
 
 [build-system]

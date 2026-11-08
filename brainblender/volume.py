@@ -64,7 +64,7 @@ def volume_info(zarr_path: Path, level: int) -> dict:
     scale = next(
         t["scale"] for t in dataset["coordinateTransformations"] if t["type"] == "scale"
     )
-    data = zarr.open_array(zarr_path / dataset["path"], mode="r")[:]
+    data = np.asarray(zarr.open_array(zarr_path / dataset["path"], mode="r")[:])
     lo, hi, floor = default_window(data / (float(data.max()) + 1))
     return {
         "zarr": str(zarr_path),

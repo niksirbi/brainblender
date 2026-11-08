@@ -24,6 +24,11 @@ _EXTENT_INDEX = {"AP": 0, "SI": 1, "LR": 2}
 CUT_FACING_WEIGHT = 1.5
 
 
+def axis_extent(extent_mm: Vec, axis: Axis) -> float:
+    """Return the extent along `axis` from (ap, si, lr) extents."""
+    return extent_mm[_EXTENT_INDEX[axis]]
+
+
 def default_keep(axis: Axis) -> str:
     """Return the side kept by default: posterior, inferior or left."""
     return SIDES[axis][1]
@@ -78,7 +83,7 @@ def kept_box(
 
     `extent_mm` is (ap, si, lr) as in volume.json.
     """
-    sizes = [extent_mm[_EXTENT_INDEX[a]] for a in ("LR", "AP", "SI")]  # X, Y, Z
+    sizes = [axis_extent(extent_mm, a) for a in ("LR", "AP", "SI")]  # X, Y, Z
     centre = [0.0, 0.0, 0.0]
     i = _BLENDER_INDEX[axis]
     lo, hi = interval

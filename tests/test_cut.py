@@ -3,6 +3,7 @@
 import pytest
 
 from brainblender.blender.cut import (
+    axis_extent,
     cut_position_mm,
     default_keep,
     kept_box,
@@ -42,3 +43,12 @@ def test_cut_position_out_of_range(kwargs: dict) -> None:
     """Positions outside the volume, or none at all, are rejected."""
     with pytest.raises(ValueError):
         cut_position_mm(13.2, **kwargs)
+
+
+def test_axis_extent_picks_from_ap_si_lr() -> None:
+    """Extents are stored (ap, si, lr) as in volume.json."""
+    assert [axis_extent((13.2, 8.0, 11.4), a) for a in ("AP", "SI", "LR")] == [
+        13.2,
+        8.0,
+        11.4,
+    ]
