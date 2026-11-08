@@ -14,14 +14,14 @@ SUPERIOR = Vector((0, 0, 1))
 
 
 def scene_args() -> tuple[Path, Path]:
-    """Return (meshes_dir, output_png) from the args Blender passes after '--'."""
+    """Return (input, output_png) from the args Blender passes after '--'.
+
+    The input is a meshes directory (mesh scenes) or a volume.json file.
+    """
     argv = sys.argv
     script_args = argv[argv.index("--") + 1 :] if "--" in argv else []
     if len(script_args) != 2:
-        print(
-            "Usage: blender --background --python <scene.py> -- "
-            "<meshes_dir> <output_png>"
-        )
+        print("Usage: blender --background --python <scene.py> -- <input> <output_png>")
         sys.exit(1)
     return Path(script_args[0]), Path(script_args[1])
 
@@ -71,8 +71,9 @@ def add_light(view_direction: Vector, energy: float = 3.0) -> None:
 
 
 def render(path: Path) -> None:
-    """Render the active camera to a PNG."""
+    """Render the active camera to a PNG, saving the scene next to it as .blend."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(path.with_suffix(".blend")), copy=True)
     scene = bpy.context.scene
     scene.render.image_settings.file_format = "PNG"
     scene.render.filepath = str(path)
