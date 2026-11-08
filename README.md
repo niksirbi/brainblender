@@ -41,6 +41,7 @@ The atlas API downloads only the template's metadata, so download its voxel data
 
 ```bash
 uv run brainblender fetch-template allen_mouse_50um --finest 2  # levels s3..s2
+uv run brainblender fetch-annotation allen_mouse_50um --finest 2  # region labels, same levels
 ```
 
 Then load `template.ome.zarr` from the printed path.

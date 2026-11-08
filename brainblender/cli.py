@@ -1,11 +1,14 @@
 """CLI commands for brainblender."""
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
 import typer
+from brainglobe_atlasapi import BrainGlobeAtlas
 
 from brainblender.atlas import (
+    fetch_annotation,
     fetch_template,
     get_region_metadata,
     load_atlas,
@@ -67,21 +70,38 @@ def list_regions(
     _print_tree(atlas.structures[children_of]["id"], 0)
 
 
+FinestOption = Annotated[
+    int, typer.Option(help="Finest pyramid level to fetch (0=full resolution)")
+]
+
+
+def _fetch(
+    fetch: Callable[[BrainGlobeAtlas, int], Path], atlas_name: str, finest: int
+) -> Path:
+    """Run a pyramid fetcher, reporting a bad level as a CLI error."""
+    atlas = load_atlas(atlas_name)
+    try:
+        return fetch(atlas, finest)
+    except ValueError as e:
+        raise typer.BadParameter(str(e), param_hint="--finest") from e
+
+
 @app.command("fetch-template")
 def fetch_template_cmd(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
-    finest: Annotated[
-        int,
-        typer.Option(help="Finest pyramid level to fetch (0=full resolution)"),
-    ] = 0,
+    finest: FinestOption = 0,
 ) -> None:
-    """Download the template volume up to the specifued resolution level."""
-    atlas = load_atlas(atlas_name)
-    try:
-        path = fetch_template(atlas, finest)
-    except ValueError as e:
-        raise typer.BadParameter(str(e), param_hint="--finest") from e
-    typer.echo(f"Template at {path}")
+    """Download the template volume up to the specified resolution level."""
+    typer.echo(f"Template at {_fetch(fetch_template, atlas_name, finest)}")
+
+
+@app.command("fetch-annotation")
+def fetch_annotation_cmd(
+    atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
+    finest: FinestOption = 0,
+) -> None:
+    """Download the annotation (label) volume up to the specified resolution level."""
+    typer.echo(f"Annotation at {_fetch(fetch_annotation, atlas_name, finest)}")
 
 
 @app.command()
