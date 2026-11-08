@@ -1,5 +1,5 @@
 # brainblender
-Visualise BrainGlobe atlas meshes in Blender.
+Visualise BrainGlobe atlas meshes and volumes in Blender.
 
 ## Installation
 
@@ -28,20 +28,20 @@ blender --version
 
 ### Microscopy Nodes (optional)
 
-Volume scenes (see [Scenes](#scenes)) and loading atlas volumes by hand both need the [Microscopy Nodes](https://extensions.blender.org/add-ons/microscopynodes/) extension
-from within Blender (Edit → Preferences → Get Extensions).
+Volume scenes (see [Volume scenes](#volume-scenes)) and loading atlas volumes by hand both need the
+[Microscopy Nodes](https://extensions.blender.org/add-ons/microscopynodes/) extension.
+Install it from within Blender (Edit → Preferences → Get Extensions).
 
 BrainGlobe atlases are stored as OME-Zarr 0.5 (Zarr v3),
 which needs Microscopy Nodes 2.2.4 or later (Blender 4.4+).
 Tested with Microscopy Nodes 3.1.3 on Blender 5.2.
 
-The atlas API downloads only the template's metadata, so download its voxel data first
+The atlas API downloads only the template's metadata, so fetch its voxel data first
 (otherwise Microscopy Nodes shows an empty volume):
 
 ```bash
-uv run brainblender fetch-template allen_mouse_50um --finest 2  # levels s3..s2
-uv run brainblender fetch-annotation allen_mouse_50um --finest 2  # region labels, same levels
-uv run brainblender fetch-template <atlas> --reference <name>      # an additional reference image
+uv run brainblender fetch-template allen_mouse_50um --finest 2  # pyramid levels from coarsest to s2
+uv run brainblender fetch-annotation allen_mouse_50um --finest 2  # same levels for the annotation
 ```
 
 Then load `template.ome.zarr` from the printed path.
@@ -51,7 +51,7 @@ Then load `template.ome.zarr` from the printed path.
 There are two ways to use `brainblender`:
 
 - **[Step by step](#step-by-step)**: run the `brainblender` CLI commands yourself to explore an atlas and export meshes, then import them into Blender and set up a scene interactively.
-- **[Scenes](#scenes)**: high-level workflows that do it all in one step: export the meshes, set up the Blender scene (camera, lighting) and render an image. Good for figures you want to regenerate reproducibly.
+- **[Scenes](#scenes)**: high-level workflows that do it all in one step: fetch the meshes or template volume, set up the Blender scene (camera, lighting) and render an image. Good for figures you want to regenerate reproducibly.
 
 Scenes use the same CLI and Blender import code as the step-by-step commands, so it helps to try those first.
 
@@ -117,7 +117,7 @@ The `scenes/` directory holds complete workflows, one folder per `blender` scene
 
 ### One-time setup
 
-Scenes write their exported meshes and renders outside the repo, to a folder on your machine.
+Scenes write their data (exported meshes or volume files) and renders outside the repo, to a folder on your machine.
 Choose this folder's location by setting the `BRAINBLENDER_SCENES_DIR` environment variable, or leave it unset to use the default `~/brainblender-scenes`.
 
 If you want to keep using the same folder for all your scenes, add a line like this to your shell configuration file (e.g. `~/.zshrc` or `~/.bashrc`):
@@ -147,7 +147,9 @@ Available scenes:
 - `allen-mouse-template-cut`: Allen mouse template volume with the front third cut away, showing white and grey matter on the coronal cut face (needs [Microscopy Nodes](#microscopy-nodes-optional)).
 
 Each scene gets its own subfolder named after the scene, e.g.
-`$BRAINBLENDER_SCENES_DIR/blackcap-root/`, with `meshes/` and `renders/` inside.
+`$BRAINBLENDER_SCENES_DIR/blackcap-root/`, with `meshes/` and `renders/` inside
+(volume scenes have `volume.json`, `cache/` and `renders/`).
+Each render comes with a `.blend` file of the same name.
 
 ### Volume scenes
 
@@ -173,7 +175,12 @@ To change the figure, edit the constants at the top of `scene.py`:
 
 To use another template, change the atlas in `run.sh`,
 and pass `--reference <name>` to `prepare-volume` for an additional reference image.
-Volume data, Microscopy Nodes' cache and renders go to `$BRAINBLENDER_SCENES_DIR/<scene>/`.
+Atlases have different numbers of pyramid levels (the blackcap template only has `s0`),
+so set `LEVEL` to one that exists; `prepare-volume` lists the valid range otherwise.
+
+The template's voxel data is downloaded to the BrainGlobe cache (`~/.brainglobe`).
+The scene folder holds `volume.json`, Microscopy Nodes' converted volume files (`cache/`),
+which the saved `.blend` needs, and the renders.
 
 ## Resources
 
