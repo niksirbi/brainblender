@@ -36,6 +36,15 @@ BrainGlobe atlases are stored as OME-Zarr 0.5 (Zarr v3),
 which needs Microscopy Nodes 2.2.4 or later (Blender 4.4+).
 Tested with Microscopy Nodes 3.1.3 on Blender 5.2.
 
+The atlas API downloads only the template's metadata, so download its voxel data first
+(otherwise Microscopy Nodes shows an empty volume):
+
+```bash
+uv run brainblender fetch-template allen_mouse_50um --finest 2  # levels s3..s2
+```
+
+Then load `template.ome.zarr` from the printed path.
+
 ## Usage
 
 There are two ways to use `brainblender`:

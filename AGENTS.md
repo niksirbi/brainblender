@@ -17,7 +17,7 @@
 ```
 brainblender/
   __init__.py        # Package init
-  cli.py             # CLI subcommands: info, list-regions, export
+  cli.py             # CLI subcommands: info, list-regions, fetch-template, export
   atlas.py           # Atlas loading and region selection (explicit + hierarchy)
   mesh.py            # Smoothing, decimation, and normalization (trimesh)
   export.py          # PLY export + manifest.json writing
@@ -40,6 +40,7 @@ uv.lock              # Locked dependencies
 ```bash
 uv run brainblender info <atlas>                     # Print atlas metadata
 uv run brainblender list-regions <atlas> --depth 2   # Show region tree
+uv run brainblender fetch-template <atlas> --finest 2  # Download template levels s<max>..s2
 uv run brainblender export <atlas> --regions root  # Export pipeline (--max-faces, --smooth to override defaults)
 blender --python brainblender/blender/import_meshes.py -- ./meshes/  # Load into Blender
 uv sync --group dev                   # Install dependencies including dev tools

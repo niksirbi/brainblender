@@ -1,6 +1,10 @@
 """Atlas loading and region selection."""
 
+import json
+from pathlib import Path
+
 from brainglobe_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi.descriptors import V3_TEMPLATE_NAME, remote_url_s3
 
 
 def load_atlas(atlas_name: str) -> BrainGlobeAtlas:
@@ -113,3 +117,43 @@ def get_region_metadata(atlas: BrainGlobeAtlas, acronym: str) -> dict:
         "color_rgb": structure["rgb_triplet"],
         "parent": parent_acronym,
     }
+
+
+def levels_to_fetch(n_levels: int, finest: int) -> list[int]:
+    """Return pyramid levels from the coarsest down to `finest`."""
+    if not 0 <= finest < n_levels:
+        raise ValueError(f"Level must be in 0..{n_levels - 1}, got {finest}")
+    return list(range(n_levels - 1, finest - 1, -1))
+
+
+def fetch_template(atlas: BrainGlobeAtlas, finest: int) -> Path:
+    """Download template pyramid levels from the coarsest down to `finest`.
+
+    Levels already on disk are skipped.
+
+    Parameters
+    ----------
+    atlas:
+        A loaded BrainGlobeAtlas instance.
+    finest:
+        Finest pyramid level to download (0 = full resolution).
+
+    Returns
+    -------
+    Path
+        Local path of the template OME-Zarr.
+
+    """
+    location = atlas.metadata["annotation_set"]["template"]["location"][1:]
+    zarr_path = atlas.root_dir / location / V3_TEMPLATE_NAME
+    attrs = json.loads((zarr_path / "zarr.json").read_text())["attributes"]
+    datasets = attrs["ome"]["multiscales"][0]["datasets"]
+    for level in levels_to_fetch(len(datasets), finest):
+        path = datasets[level]["path"]
+        if (zarr_path / path / "c").exists():  # same check the atlas API uses
+            print(f"  {path}: already downloaded")
+            continue
+        print(f"  {path}: downloading...")
+        remote = remote_url_s3.format(f"{location}/{V3_TEMPLATE_NAME}/{path}/")
+        atlas.fs.get(remote, str(zarr_path / path), recursive=True)
+    return zarr_path

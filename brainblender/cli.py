@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 
-from brainblender.atlas import get_region_metadata, load_atlas, resolve_regions
+from brainblender.atlas import (
+    fetch_template,
+    get_region_metadata,
+    load_atlas,
+    resolve_regions,
+)
 from brainblender.export import export_all
 from brainblender.mesh import decimate as decimate_mesh
 from brainblender.mesh import normalize as normalize_mesh
@@ -60,6 +65,23 @@ def list_regions(
             _print_tree(child.identifier, current_depth + 1)
 
     _print_tree(atlas.structures[children_of]["id"], 0)
+
+
+@app.command("fetch-template")
+def fetch_template_cmd(
+    atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
+    finest: Annotated[
+        int,
+        typer.Option(help="Finest pyramid level to fetch (0=full resolution)"),
+    ] = 0,
+) -> None:
+    """Download the template volume up to the specifued resolution level."""
+    atlas = load_atlas(atlas_name)
+    try:
+        path = fetch_template(atlas, finest)
+    except ValueError as e:
+        raise typer.BadParameter(str(e), param_hint="--finest") from e
+    typer.echo(f"Template at {path}")
 
 
 @app.command()

@@ -2,9 +2,10 @@
 
 from types import SimpleNamespace
 
+import pytest
 from treelib import Tree
 
-from brainblender.atlas import resolve_regions
+from brainblender.atlas import levels_to_fetch, resolve_regions
 
 
 def make_atlas() -> SimpleNamespace:
@@ -27,3 +28,11 @@ def test_depth_includes_shallower_leaves() -> None:
     assert resolve_regions(atlas, children_of="root", depth=1) == ["A", "B"]
     assert resolve_regions(atlas, children_of="root", depth=2) == ["A", "B1", "B2"]
     assert resolve_regions(atlas, children_of="root", depth=3) == ["A", "B1a", "B2"]
+
+
+def test_levels_to_fetch_coarsest_first() -> None:
+    """Fetching stops at the requested level and rejects levels out of range."""
+    assert levels_to_fetch(4, 2) == [3, 2]
+    assert levels_to_fetch(4, 0) == [3, 2, 1, 0]
+    with pytest.raises(ValueError):
+        levels_to_fetch(4, 4)
