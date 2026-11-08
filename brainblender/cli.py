@@ -1,5 +1,6 @@
 """CLI commands for brainblender."""
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
@@ -19,6 +20,7 @@ from brainblender.mesh import decimate as decimate_mesh
 from brainblender.mesh import normalize as normalize_mesh
 from brainblender.mesh import smooth as smooth_mesh
 from brainblender.mesh import to_trimesh
+from brainblender.volume import volume_info
 
 if TYPE_CHECKING:
     import trimesh
@@ -109,6 +111,30 @@ def fetch_annotation_cmd(
 ) -> None:
     """Download the annotation (label) volume up to the specified resolution level."""
     typer.echo(f"Annotation at {_fetch(fetch_annotation, atlas_name, finest)}")
+
+
+@app.command("prepare-volume")
+def prepare_volume_cmd(
+    atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
+    level: Annotated[int, typer.Option(help="Pyramid level to render (0=full)")],
+    output: Annotated[
+        Path, typer.Option("--output", "-o", help="volume.json file to write")
+    ],
+    reference: Annotated[
+        str | None,
+        typer.Option(help="Additional reference to use instead of the main template"),
+    ] = None,
+) -> None:
+    """Fetch a template level and describe it for a volume scene."""
+    atlas = load_atlas(atlas_name)
+    try:
+        path = fetch_template(atlas, level, reference)
+        info = volume_info(path, level)
+    except ValueError as e:
+        raise typer.BadParameter(str(e)) from e
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(info, indent=2))
+    typer.echo(f"Wrote {output}")
 
 
 @app.command()
