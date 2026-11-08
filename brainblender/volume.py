@@ -11,9 +11,8 @@ from brainblender.atlas import levels_to_fetch
 # Voxels above this normalized intensity count as tissue, below as background.
 TISSUE_MIN = 0.02
 # Percentiles of tissue intensities giving the default contrast window
-# (≈ 0.03-0.45 on the Allen mouse template) and the opacity floor.
+# (≈ 0.03-0.45 on the Allen mouse template).
 WINDOW_PERCENTILES = (2, 95)
-FLOOR_PERCENTILE = 5
 
 
 def default_window(normalized: np.ndarray) -> tuple[float, float, float]:
@@ -36,7 +35,9 @@ def default_window(normalized: np.ndarray) -> tuple[float, float, float]:
             "The volume is empty (no voxels above background); was its data downloaded?"
         )
     lo, hi = np.percentile(tissue, WINDOW_PERCENTILES)
-    floor = min(float(np.percentile(tissue, FLOOR_PERCENTILE)), float(hi))
+    # Halfway between background and the window: hides the background and the
+    # blurred brain edge, but no tissue inside the window.
+    floor = (TISSUE_MIN + float(lo)) / 2
     return float(lo), float(hi), floor
 
 
@@ -64,6 +65,12 @@ def volume_info(zarr_path: Path, level: int) -> dict:
     scale = next(
         t["scale"] for t in dataset["coordinateTransformations"] if t["type"] == "scale"
     )
+    if scale[1] != scale[2]:
+        # Microscopy Nodes uses the x spacing for y too; the volume would be
+        # misplaced in Blender.
+        raise ValueError(
+            f"Unsupported voxel spacing {scale}: y and x spacing must match"
+        )
     data = np.asarray(zarr.open_array(zarr_path / dataset["path"], mode="r")[:])
     lo, hi, floor = default_window(data / (float(data.max()) + 1))
     return {

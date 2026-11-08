@@ -48,10 +48,7 @@ def test_volume_scene_renders_cut_face(tmp_path: Path) -> None:
     data[inside & (abs(yy - 16) < 3)] = 60  # dark "white matter" sheet
     zarr_path = write_ome_zarr(tmp_path / "t.ome.zarr", data, scale_mm=0.1)
     json_path = tmp_path / "volume.json"
-    # Two-valued data puts the default floor (5th percentile) right on the sheet,
-    # hiding it; real templates have a spread. Pin the floor below the sheet.
-    info = {**volume_info(zarr_path, level=0), "floor": 0.05}
-    json_path.write_text(json.dumps(info))
+    json_path.write_text(json.dumps(volume_info(zarr_path, level=0)))
     png = tmp_path / "renders" / "out.png"
 
     subprocess.run(
