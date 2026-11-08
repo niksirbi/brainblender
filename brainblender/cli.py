@@ -78,21 +78,28 @@ FinestOption = Annotated[
 def _fetch(
     fetch: Callable[[BrainGlobeAtlas, int], Path], atlas_name: str, finest: int
 ) -> Path:
-    """Run a pyramid fetcher, reporting a bad level as a CLI error."""
+    """Run a pyramid fetcher, reporting bad options as a CLI error."""
     atlas = load_atlas(atlas_name)
     try:
         return fetch(atlas, finest)
     except ValueError as e:
-        raise typer.BadParameter(str(e), param_hint="--finest") from e
+        raise typer.BadParameter(str(e)) from e
 
 
 @app.command("fetch-template")
 def fetch_template_cmd(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
     finest: FinestOption = 0,
+    reference: Annotated[
+        str | None,
+        typer.Option(help="Additional reference to fetch instead of the main template"),
+    ] = None,
 ) -> None:
     """Download the template volume up to the specified resolution level."""
-    typer.echo(f"Template at {_fetch(fetch_template, atlas_name, finest)}")
+    path = _fetch(
+        lambda atlas, level: fetch_template(atlas, level, reference), atlas_name, finest
+    )
+    typer.echo(f"Template at {path}")
 
 
 @app.command("fetch-annotation")

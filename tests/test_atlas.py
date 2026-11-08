@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from treelib import Tree
 
-from brainblender.atlas import levels_to_fetch, resolve_regions
+from brainblender.atlas import levels_to_fetch, resolve_regions, template_location
 
 
 def make_atlas() -> SimpleNamespace:
@@ -36,3 +36,23 @@ def test_levels_to_fetch_coarsest_first() -> None:
     assert levels_to_fetch(4, 0) == [3, 2, 1, 0]
     with pytest.raises(ValueError):
         levels_to_fetch(4, 4)
+
+
+META = {
+    "annotation_set": {"template": {"location": "/templates/t/1_0"}},
+    "additional_references": [{"name": "nissl", "location": "/templates/n/1_0"}],
+}
+
+
+def test_template_location_main_and_reference() -> None:
+    """The main template and named references resolve to their locations."""
+    assert template_location(META) == "templates/t/1_0"
+    assert template_location(META, "nissl") == "templates/n/1_0"
+
+
+def test_template_location_unknown_reference_lists_available() -> None:
+    """An unknown reference names the available ones, or says there are none."""
+    with pytest.raises(ValueError, match="nissl"):
+        template_location(META, "mri")
+    with pytest.raises(ValueError, match="none"):
+        template_location({**META, "additional_references": []}, "mri")
