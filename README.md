@@ -28,8 +28,7 @@ blender --version
 
 ### Microscopy Nodes (optional)
 
-To load atlas volumes (e.g. the reference template) into Blender alongside the meshes,
-install the [Microscopy Nodes](https://extensions.blender.org/add-ons/microscopynodes/) extension
+Volume scenes (see [Scenes](#scenes)) and loading atlas volumes by hand both need the [Microscopy Nodes](https://extensions.blender.org/add-ons/microscopynodes/) extension
 from within Blender (Edit → Preferences → Get Extensions).
 
 BrainGlobe atlases are stored as OME-Zarr 0.5 (Zarr v3),
@@ -42,6 +41,7 @@ The atlas API downloads only the template's metadata, so download its voxel data
 ```bash
 uv run brainblender fetch-template allen_mouse_50um --finest 2  # levels s3..s2
 uv run brainblender fetch-annotation allen_mouse_50um --finest 2  # region labels, same levels
+uv run brainblender fetch-template <atlas> --reference <name>      # an additional reference image
 ```
 
 Then load `template.ome.zarr` from the printed path.
@@ -110,8 +110,10 @@ This imports all exported meshes, assigns material colors from the atlas, and gr
 
 The `scenes/` directory holds complete workflows, one folder per `blender` scene:
 
-- `run.sh` fetches and exports the meshes with the `brainblender` CLI, then launches Blender with `scene.py`.
+- `run.sh` fetches the data with the `brainblender` CLI (exported meshes, or a template volume),
+  then launches Blender with `scene.py`.
 - `scene.py` runs inside Blender, sets up the scene and renders an image.
+  It also saves the scene as a `.blend` next to the render, so you can open it and tweak it by hand.
 
 ### One-time setup
 
@@ -142,9 +144,36 @@ Available scenes:
 
 - `blackcap-root`: Eurasian blackcap whole-brain surface.
 - `allen-mouse-cortex`: Allen mouse cortical areas three levels below CTX (isocortical, olfactory and hippocampal areas, and cortical subplate subdivisions).
+- `allen-mouse-template-cut`: Allen mouse template volume with the front third cut away, showing white and grey matter on the coronal cut face (needs [Microscopy Nodes](#microscopy-nodes-optional)).
 
 Each scene gets its own subfolder named after the scene, e.g.
 `$BRAINBLENDER_SCENES_DIR/blackcap-root/`, with `meshes/` and `renders/` inside.
+
+### Volume scenes
+
+Volume scenes render an atlas template cut open by one plane.
+`run.sh` runs `brainblender prepare-volume`, which downloads the chosen pyramid level
+and writes a `volume.json` describing it, then Microscopy Nodes loads the volume in Blender.
+
+```bash
+PREVIEW=1 bash scenes/allen-mouse-template-cut/run.sh   # fast, low-quality render
+LEVEL=1 bash scenes/allen-mouse-template-cut/run.sh     # full quality at pyramid level s1
+```
+
+To change the figure, edit the constants at the top of `scene.py`:
+
+- `CUT_AXIS`: `AP`, `SI` or `LR`.
+- `CUT_FRACTION`: where to cut, as a fraction from the anterior, superior or right end
+  (`CUT_MM` overrides it in mm).
+- `KEEP`: the side to keep; by default posterior, inferior or left.
+- `WINDOW`: the contrast window `(lo, hi)` in normalized intensity (0-1).
+  `None` uses a default computed from the template's intensities.
+- `COLOR`: the colour of the brightest tissue; the ramp starts at black.
+- `VIEW_DIRECTION`: by default the camera looks obliquely at the cut face from the removed side.
+
+To use another template, change the atlas in `run.sh`,
+and pass `--reference <name>` to `prepare-volume` for an additional reference image.
+Volume data, Microscopy Nodes' cache and renders go to `$BRAINBLENDER_SCENES_DIR/<scene>/`.
 
 ## Resources
 
