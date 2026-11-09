@@ -17,18 +17,21 @@
 ```
 brainblender/
   __init__.py        # Package init
-  cli.py             # CLI subcommands: info, list-regions, fetch-template, fetch-annotation, export
+  cli.py             # CLI subcommands: info, list-regions, fetch-template, fetch-annotation, prepare-volume, export
   atlas.py           # Atlas loading and region selection (explicit + hierarchy)
   mesh.py            # Smoothing, decimation, and normalization (trimesh)
   export.py          # PLY export + manifest.json writing
+  volume.py          # Template level info + default contrast window for volume scenes
   blender/
     __init__.py
     import_meshes.py # Standalone Blender script (bpy + stdlib only)
-    scene_setup.py   # Shared scene helpers: directions, camera, light, render
+    scene_setup.py   # Shared scene helpers: directions, camera, light, render (+ .blend)
+    cut.py           # Cut-plane and camera geometry (stdlib only, unit-tested)
+    volume_setup.py  # Load a template with Microscopy Nodes, pose it like meshes, style, cut
 scenes/<name>/       # One folder per scene workflow
-  run.sh             # Export meshes (uv/CLI), then launch Blender with scene.py
+  run.sh             # Fetch data (uv/CLI: export or prepare-volume), then launch Blender with scene.py
   scene.py           # Runs inside Blender (bpy); reuses brainblender/blender helpers
-                     # Scene data (meshes/, renders/) lives in $BRAINBLENDER_SCENES_DIR/<name>/
+                     # Scene data (meshes/ or volume.json + cache/, renders/) lives in $BRAINBLENDER_SCENES_DIR/<name>/
                      # (default ~/brainblender-scenes; set per machine, see README)
 pyproject.toml       # Project metadata, dependencies, and tool config
 uv.lock              # Locked dependencies
@@ -42,13 +45,14 @@ uv run brainblender info <atlas>                     # Print atlas metadata
 uv run brainblender list-regions <atlas> --depth 2   # Show region tree
 uv run brainblender fetch-template <atlas> --finest 2  # Download template levels s<max>..s2
 uv run brainblender fetch-annotation <atlas> --finest 2  # Same for the annotation (label) volume
+uv run brainblender prepare-volume <atlas> --level 2 -o volume.json  # Fetch a template level for volume scenes
 uv run brainblender export <atlas> --regions root  # Export pipeline (--max-faces, --smooth to override defaults)
 blender --python brainblender/blender/import_meshes.py -- ./meshes/  # Load into Blender
 uv sync --group dev                   # Install dependencies including dev tools
 uv run pre-commit install             # Set up pre-commit hooks (once after cloning)
 uv run pre-commit run --all-files     # Run all hooks manually
 uv run mypy brainblender/             # Type-check
-uv run pytest                         # Run tests
+uv run pytest                         # Run tests (test_volume_scene.py needs Blender + Microscopy Nodes; skips otherwise)
 uv run ruff check brainblender/       # Lint
 uv run ruff format brainblender/      # Format
 ```
