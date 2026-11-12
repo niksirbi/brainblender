@@ -9,7 +9,7 @@
 - Python 3.12+, managed with `uv`
 - CLI via `typer`
 - Brain atlas data via `brainglobe-atlasapi` v3 (OME-Zarr atlases on S3, cached in `~/.brainglobe/brainglobe-atlasapi/`)
-- Mesh processing via `trimesh` + `fast-simplification`
+- Mesh processing via `trimesh` (smoothing) + `pymeshlab` (decimation)
 - Blender import via standalone `bpy` script
 
 ## Project structure

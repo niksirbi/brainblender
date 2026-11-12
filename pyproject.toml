@@ -8,7 +8,7 @@ license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 dependencies = [
     "brainglobe-atlasapi>=3.0.3",
-    "fast-simplification",
+    "pymeshlab>=2025.7.post1",
     "trimesh>=5.2.0",
     "typer>=0.27.3",
 ]
@@ -43,7 +43,7 @@ module = [
     "brainglobe_atlasapi.*",
     "meshio.*",
     "trimesh.*",
-    "fast_simplification.*",
+    "pymeshlab.*",
 ]
 ignore_missing_imports = true
 

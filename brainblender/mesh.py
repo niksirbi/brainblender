@@ -3,6 +3,7 @@
 from typing import Literal
 
 import numpy as np
+import pymeshlab
 import trimesh
 import trimesh.smoothing
 
@@ -106,6 +107,8 @@ def decimate(mesh: trimesh.Trimesh, max_faces: int) -> trimesh.Trimesh:
     """Decimate a mesh down to at most `max_faces` faces.
 
     Meshes that already have `max_faces` faces or fewer are returned unchanged.
+    Uses MeshLab's quadric edge collapse, which rejects collapses that would
+    change the topology or flip a face, so a clean mesh stays manifold.
 
     Parameters
     ----------
@@ -122,4 +125,12 @@ def decimate(mesh: trimesh.Trimesh, max_faces: int) -> trimesh.Trimesh:
     """
     if len(mesh.faces) <= max_faces:
         return mesh
-    return mesh.simplify_quadric_decimation(face_count=max_faces)
+    mesh_set = pymeshlab.MeshSet()
+    mesh_set.add_mesh(pymeshlab.Mesh(mesh.vertices, mesh.faces))
+    mesh_set.meshing_decimation_quadric_edge_collapse(
+        targetfacenum=max_faces,
+        preservetopology=True,
+        preservenormal=True,
+    )
+    decimated = mesh_set.current_mesh()
+    return to_trimesh(decimated.vertex_matrix(), decimated.face_matrix())
