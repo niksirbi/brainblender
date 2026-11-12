@@ -1,5 +1,10 @@
 """Mesh processing: smoothing and decimation."""
 
+import multiprocessing
+import os
+from collections import deque
+from collections.abc import Iterable, Iterator
+from concurrent.futures import Future, ProcessPoolExecutor
 from typing import Literal
 
 import numpy as np
@@ -134,3 +139,61 @@ def decimate(mesh: trimesh.Trimesh, max_faces: int) -> trimesh.Trimesh:
     )
     decimated = mesh_set.current_mesh()
     return to_trimesh(decimated.vertex_matrix(), decimated.face_matrix())
+
+
+def decimate_many(
+    meshes: Iterable[trimesh.Trimesh], max_faces: int, jobs: int = 0
+) -> Iterator[trimesh.Trimesh]:
+    """Decimate several meshes, running the heavy ones in parallel.
+
+    Meshes are consumed lazily and yielded in their input order, so only a
+    few raw meshes are held in memory at a time.
+
+    Parameters
+    ----------
+    meshes:
+        The meshes to decimate.
+    max_faces:
+        Maximum number of faces to keep per mesh.
+    jobs:
+        Number of worker processes; 0 means one per CPU core and 1 decimates
+        in the calling process.
+
+    Yields
+    ------
+    trimesh.Trimesh
+        Each mesh, decimated where it exceeded `max_faces`.
+
+    """
+    jobs = jobs or os.cpu_count() or 1
+    if jobs == 1:
+        yield from (decimate(mesh, max_faces) for mesh in meshes)
+        return
+
+    pending: deque[trimesh.Trimesh | Future[trimesh.Trimesh]] = deque()
+    n_futures = 0
+    # MeshLab is not thread-safe, so parallel decimation needs processes;
+    # spawned ones avoid forking a parent that may hold threads.
+    with ProcessPoolExecutor(
+        jobs, mp_context=multiprocessing.get_context("spawn")
+    ) as pool:
+        for mesh in meshes:
+            if len(mesh.faces) > max_faces:
+                pending.append(pool.submit(decimate, mesh, max_faces))
+                n_futures += 1
+            else:
+                pending.append(mesh)
+            # Yield what is ready; block only once too many heavy meshes are queued
+            while pending and (
+                not isinstance(pending[0], Future)
+                or pending[0].done()
+                or n_futures > 2 * jobs
+            ):
+                n_futures -= isinstance(pending[0], Future)
+                yield _result(pending.popleft())
+        while pending:
+            yield _result(pending.popleft())
+
+
+def _result(mesh: trimesh.Trimesh | Future[trimesh.Trimesh]) -> trimesh.Trimesh:
+    return mesh.result() if isinstance(mesh, Future) else mesh

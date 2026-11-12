@@ -96,6 +96,11 @@ The intention is to leave light, clean meshes almost untouched while cleaning up
 Override these defaults with `--max-faces` (`0` turns decimation off)
 and `--smooth` (`0` turns smoothing off).
 
+Decimation is the slow step: it takes roughly 1 s per 100,000 faces of the original mesh,
+almost regardless of `--max-faces`.
+Meshes are therefore decimated in parallel, one per CPU core by default (`--jobs` sets the number,
+`--jobs 1` turns this off), which helps whenever an export holds several dense meshes.
+
 ### Import into Blender
 
 This step requires the `blender` command (see [Installation](#blender)).

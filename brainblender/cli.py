@@ -1,9 +1,11 @@
 """CLI commands for brainblender."""
 
-from collections.abc import Callable
+import os
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
+import trimesh
 import typer
 from brainglobe_atlasapi import BrainGlobeAtlas
 
@@ -15,13 +17,9 @@ from brainblender.atlas import (
     resolve_regions,
 )
 from brainblender.export import export_all
-from brainblender.mesh import decimate as decimate_mesh
+from brainblender.mesh import decimate_many, to_trimesh
 from brainblender.mesh import normalize as normalize_mesh
 from brainblender.mesh import smooth as smooth_mesh
-from brainblender.mesh import to_trimesh
-
-if TYPE_CHECKING:
-    import trimesh
 
 app = typer.Typer()
 
@@ -143,6 +141,14 @@ def export(
     smooth_method: Annotated[
         str, typer.Option(help="Smoothing method: taubin, laplacian, humphrey")
     ] = "taubin",
+    jobs: Annotated[
+        int,
+        typer.Option(
+            "--jobs",
+            "-j",
+            help="Meshes to decimate in parallel (0=one per CPU core)",
+        ),
+    ] = 0,
     output: Annotated[
         Path, typer.Option("--output", "-o", help="Output directory")
     ] = Path("./meshes"),
@@ -161,22 +167,26 @@ def export(
 
     typer.echo(f"Processing {len(acronyms)} region(s) from '{atlas_name}'...")
 
-    meshes: list[tuple[dict, trimesh.Trimesh]] = []
-    for acronym in acronyms:
-        typer.echo(f"  {acronym}...", nl=False)
-        raw_mesh = atlas.mesh_from_structure(acronym)
-        mesh = to_trimesh(raw_mesh.points, raw_mesh.cells[0].data)
-        mesh = normalize_mesh(mesh, atlas.resolution, atlas.shape)
+    def raw_meshes() -> Iterator[trimesh.Trimesh]:
+        for acronym in acronyms:
+            raw_mesh = atlas.mesh_from_structure(acronym)
+            mesh = to_trimesh(raw_mesh.points, raw_mesh.cells[0].data)
+            yield normalize_mesh(mesh, atlas.resolution, atlas.shape)
 
-        # Decimate first so smoothing acts at a similar scale on every mesh
-        if max_faces > 0:
-            mesh = decimate_mesh(mesh, max_faces=max_faces)
+    # Decimate first so smoothing acts at a similar scale on every mesh
+    # A single region gains nothing from a worker process
+    workers = min(jobs or os.cpu_count() or 1, len(acronyms))
+    processed = (
+        decimate_many(raw_meshes(), max_faces, jobs=workers)
+        if max_faces > 0
+        else raw_meshes()
+    )
+    meshes: list[tuple[dict, trimesh.Trimesh]] = []
+    for acronym, mesh in zip(acronyms, processed, strict=True):
         if smooth_iterations > 0:
             mesh = smooth_mesh(mesh, iterations=smooth_iterations, method=smooth_method)  # type: ignore[arg-type]
-
-        metadata = get_region_metadata(atlas, acronym)
-        meshes.append((metadata, mesh))
-        typer.echo(f" {len(mesh.vertices)} verts, {len(mesh.faces)} faces")
+        meshes.append((get_region_metadata(atlas, acronym), mesh))
+        typer.echo(f"  {acronym}: {len(mesh.vertices)} verts, {len(mesh.faces)} faces")
 
     processing = {
         "max_faces": max_faces or None,
