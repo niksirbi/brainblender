@@ -136,6 +136,10 @@ def decimate(mesh: trimesh.Trimesh, max_faces: int) -> trimesh.Trimesh:
         targetfacenum=max_faces,
         preservetopology=True,
         preservenormal=True,
+        # Keeps triangles well-shaped on flat areas (e.g. where the atlas
+        # volume cuts the brain), which otherwise collapse into sliver fans.
+        planarquadric=True,
+        planarweight=0.01,
     )
     decimated = mesh_set.current_mesh()
     return to_trimesh(decimated.vertex_matrix(), decimated.face_matrix())
