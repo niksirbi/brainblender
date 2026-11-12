@@ -1,6 +1,14 @@
 """Atlas loading and region selection."""
 
+import json
+from pathlib import Path
+
 from brainglobe_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi.descriptors import (
+    V3_ANNOTATION_NAME,
+    V3_TEMPLATE_NAME,
+    remote_url_s3,
+)
 
 
 def load_atlas(atlas_name: str) -> BrainGlobeAtlas:
@@ -21,14 +29,21 @@ def load_atlas(atlas_name: str) -> BrainGlobeAtlas:
 
 
 def _get_regions_at_depth(atlas: BrainGlobeAtlas, parent: str, depth: int) -> list[str]:
-    """Get region acronyms at exactly `depth` levels below parent."""
+    """Get region acronyms `depth` levels below parent.
+
+    Branches that end sooner contribute their leaf instead, so the result is
+    the leaves of the tree `list-regions --depth` prints, covering the whole parent.
+    """
     parent_id = atlas.structures[parent]["id"]
     current_level = [parent_id]
     for _ in range(depth):
         next_level: list[int] = []
         for region_id in current_level:
             children = atlas.hierarchy.children(region_id)
-            next_level.extend(child.identifier for child in children)
+            if children:
+                next_level.extend(child.identifier for child in children)
+            else:
+                next_level.append(region_id)  # leaf above `depth`
         current_level = next_level
     return [atlas.structures[rid]["acronym"] for rid in current_level]
 
@@ -50,7 +65,8 @@ def resolve_regions(
     children_of:
         Parent region acronym for hierarchy-based selection.
     depth:
-        Hierarchy level below `children_of`. None means all descendants.
+        Hierarchy level below `children_of`; leaves above that level are
+        included too. None means all descendants.
 
     Returns
     -------
@@ -105,3 +121,74 @@ def get_region_metadata(atlas: BrainGlobeAtlas, acronym: str) -> dict:
         "color_rgb": structure["rgb_triplet"],
         "parent": parent_acronym,
     }
+
+
+def levels_to_fetch(n_levels: int, finest: int) -> list[int]:
+    """Return pyramid levels from the coarsest down to `finest`."""
+    if not 0 <= finest < n_levels:
+        raise ValueError(f"Level must be in 0..{n_levels - 1}, got {finest}")
+    return list(range(n_levels - 1, finest - 1, -1))
+
+
+def _fetch_pyramid(
+    atlas: BrainGlobeAtlas, location: str, name: str, finest: int
+) -> Path:
+    """Download OME-Zarr pyramid levels from the coarsest down to `finest`.
+
+    Levels already on disk are skipped.
+    """
+    zarr_path = atlas.root_dir / location / name
+    attrs = json.loads((zarr_path / "zarr.json").read_text())["attributes"]
+    datasets = attrs["ome"]["multiscales"][0]["datasets"]
+    for level in levels_to_fetch(len(datasets), finest):
+        path = datasets[level]["path"]
+        if (zarr_path / path / "c").exists():  # same check the atlas API uses
+            print(f"  {path}: already downloaded")
+            continue
+        print(f"  {path}: downloading...")
+        remote = remote_url_s3.format(f"{location}/{name}/{path}/")
+        atlas.fs.get(remote, str(zarr_path / path), recursive=True)
+    return zarr_path
+
+
+def fetch_template(atlas: BrainGlobeAtlas, finest: int) -> Path:
+    """Download template pyramid levels from the coarsest down to `finest`.
+
+    Parameters
+    ----------
+    atlas:
+        A loaded BrainGlobeAtlas instance.
+    finest:
+        Finest pyramid level to download (0 = full resolution).
+
+    Returns
+    -------
+    Path
+        Local path of the template OME-Zarr.
+
+    """
+    location = atlas.metadata["annotation_set"]["template"]["location"][1:]
+    return _fetch_pyramid(atlas, location, V3_TEMPLATE_NAME, finest)
+
+
+def fetch_annotation(atlas: BrainGlobeAtlas, finest: int) -> Path:
+    """Download annotation pyramid levels from the coarsest down to `finest`.
+
+    This is the label volume (one structure ID per voxel) that
+    `atlas.annotation` reads.
+
+    Parameters
+    ----------
+    atlas:
+        A loaded BrainGlobeAtlas instance.
+    finest:
+        Finest pyramid level to download (0 = full resolution).
+
+    Returns
+    -------
+    Path
+        Local path of the annotation OME-Zarr.
+
+    """
+    location = atlas.metadata["annotation_set"]["location"][1:]
+    return _fetch_pyramid(atlas, location, V3_ANNOTATION_NAME, finest)

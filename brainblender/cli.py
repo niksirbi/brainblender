@@ -1,19 +1,25 @@
 """CLI commands for brainblender."""
 
+import os
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
+import trimesh
 import typer
+from brainglobe_atlasapi import BrainGlobeAtlas
 
-from brainblender.atlas import get_region_metadata, load_atlas, resolve_regions
+from brainblender.atlas import (
+    fetch_annotation,
+    fetch_template,
+    get_region_metadata,
+    load_atlas,
+    resolve_regions,
+)
 from brainblender.export import export_all
-from brainblender.mesh import decimate as decimate_mesh
+from brainblender.mesh import decimate_many, to_trimesh
 from brainblender.mesh import normalize as normalize_mesh
 from brainblender.mesh import smooth as smooth_mesh
-from brainblender.mesh import to_trimesh
-
-if TYPE_CHECKING:
-    import trimesh
 
 app = typer.Typer()
 
@@ -34,9 +40,12 @@ def info(
 @app.command()
 def list_regions(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
-    depth: Annotated[int, typer.Option(help="Maximum tree depth to display")] = 2,
-    root: Annotated[
-        str, typer.Option(help="Root region to start the tree from")
+    depth: Annotated[
+        int, typer.Option(help="Levels to show below the starting region")
+    ] = 2,
+    children_of: Annotated[
+        str,
+        typer.Option(help="Region to start the tree from"),
     ] = "root",
 ) -> None:
     """Print region hierarchy as an indented tree."""
@@ -56,8 +65,41 @@ def list_regions(
         for child in children:
             _print_tree(child.identifier, current_depth + 1)
 
-    root_structure = atlas.structures[root]
-    _print_tree(root_structure["id"], 0)
+    _print_tree(atlas.structures[children_of]["id"], 0)
+
+
+FinestOption = Annotated[
+    int, typer.Option(help="Finest pyramid level to fetch (0=full resolution)")
+]
+
+
+def _fetch(
+    fetch: Callable[[BrainGlobeAtlas, int], Path], atlas_name: str, finest: int
+) -> Path:
+    """Run a pyramid fetcher, reporting a bad level as a CLI error."""
+    atlas = load_atlas(atlas_name)
+    try:
+        return fetch(atlas, finest)
+    except ValueError as e:
+        raise typer.BadParameter(str(e), param_hint="--finest") from e
+
+
+@app.command("fetch-template")
+def fetch_template_cmd(
+    atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
+    finest: FinestOption = 0,
+) -> None:
+    """Download the template volume up to the specified resolution level."""
+    typer.echo(f"Template at {_fetch(fetch_template, atlas_name, finest)}")
+
+
+@app.command("fetch-annotation")
+def fetch_annotation_cmd(
+    atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
+    finest: FinestOption = 0,
+) -> None:
+    """Download the annotation (label) volume up to the specified resolution level."""
+    typer.echo(f"Annotation at {_fetch(fetch_annotation, atlas_name, finest)}")
 
 
 @app.command()
@@ -65,7 +107,11 @@ def export(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
     regions: Annotated[
         list[str] | None,
-        typer.Option("--regions", "-r", help="Region acronyms to export"),
+        typer.Option(
+            "--regions",
+            "-r",
+            help="Region acronyms to export (comma-separated or repeated)",
+        ),
     ] = None,
     children_of: Annotated[
         str | None,
@@ -73,19 +119,36 @@ def export(
     ] = None,
     hierarchy_depth: Annotated[
         int | None,
-        typer.Option("--depth", help="Hierarchy depth for --children-of"),
+        typer.Option(
+            "--depth",
+            help="Levels below --children-of (shallower leaves included)",
+        ),
     ] = None,
-    decimate_ratio: Annotated[
-        float | None,
-        typer.Option("--decimate", "-d", help="Decimation ratio (0.0-1.0)"),
-    ] = None,
+    max_faces: Annotated[
+        int,
+        typer.Option(
+            "--max-faces",
+            "-f",
+            help="Decimate meshes with more faces than this (0=never)",
+        ),
+    ] = 100_000,
     smooth_iterations: Annotated[
         int,
-        typer.Option("--smooth", "-s", help="Smoothing iterations (0=none)"),
-    ] = 0,
+        typer.Option(
+            "--smooth", "-s", help="Smoothing iterations, after decimation (0=none)"
+        ),
+    ] = 5,
     smooth_method: Annotated[
         str, typer.Option(help="Smoothing method: taubin, laplacian, humphrey")
     ] = "taubin",
+    jobs: Annotated[
+        int,
+        typer.Option(
+            "--jobs",
+            "-j",
+            help="Meshes to decimate in parallel (0=one per CPU core)",
+        ),
+    ] = 0,
     output: Annotated[
         Path, typer.Option("--output", "-o", help="Output directory")
     ] = Path("./meshes"),
@@ -93,6 +156,8 @@ def export(
     """Fetch, process, and export region meshes as PLY files."""
     atlas = load_atlas(atlas_name)
 
+    if regions:
+        regions = [r for value in regions for r in value.split(",") if r]
     acronyms = resolve_regions(
         atlas, regions=regions, children_of=children_of, depth=hierarchy_depth
     )
@@ -102,26 +167,31 @@ def export(
 
     typer.echo(f"Processing {len(acronyms)} region(s) from '{atlas_name}'...")
 
-    meshes: list[tuple[dict, trimesh.Trimesh]] = []
-    for acronym in acronyms:
-        typer.echo(f"  {acronym}...", nl=False)
-        raw_mesh = atlas.mesh_from_structure(acronym)
-        mesh = to_trimesh(raw_mesh.points, raw_mesh.cells[0].data)
-        mesh = normalize_mesh(mesh, atlas.resolution, atlas.shape)
+    def raw_meshes() -> Iterator[trimesh.Trimesh]:
+        for acronym in acronyms:
+            raw_mesh = atlas.mesh_from_structure(acronym)
+            mesh = to_trimesh(raw_mesh.points, raw_mesh.cells[0].data)
+            yield normalize_mesh(mesh, atlas.resolution, atlas.shape)
 
+    # Decimate first so smoothing acts at a similar scale on every mesh
+    # A single region gains nothing from a worker process
+    workers = min(jobs or os.cpu_count() or 1, len(acronyms))
+    processed = (
+        decimate_many(raw_meshes(), max_faces, jobs=workers)
+        if max_faces > 0
+        else raw_meshes()
+    )
+    meshes: list[tuple[dict, trimesh.Trimesh]] = []
+    for acronym, mesh in zip(acronyms, processed, strict=True):
         if smooth_iterations > 0:
             mesh = smooth_mesh(mesh, iterations=smooth_iterations, method=smooth_method)  # type: ignore[arg-type]
-        if decimate_ratio is not None:
-            mesh = decimate_mesh(mesh, ratio=decimate_ratio)
-
-        metadata = get_region_metadata(atlas, acronym)
-        meshes.append((metadata, mesh))
-        typer.echo(f" {len(mesh.vertices)} verts, {len(mesh.faces)} faces")
+        meshes.append((get_region_metadata(atlas, acronym), mesh))
+        typer.echo(f"  {acronym}: {len(mesh.vertices)} verts, {len(mesh.faces)} faces")
 
     processing = {
+        "max_faces": max_faces or None,
         "smoothing_iterations": smooth_iterations,
         "smoothing_method": smooth_method if smooth_iterations > 0 else None,
-        "decimation_ratio": decimate_ratio,
     }
     export_all(
         output_dir=output,
