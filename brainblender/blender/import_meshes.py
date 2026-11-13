@@ -41,13 +41,17 @@ def frame_viewport() -> None:
             break
 
 
-def import_meshes(meshes_dir: Path) -> None:
-    """Import all meshes from a brainblender export directory."""
+def import_meshes(meshes_dir: Path, clear: bool = True) -> list[bpy.types.Object]:
+    """Import all meshes from a brainblender export directory.
+
+    Pass clear=False to keep existing objects, e.g. when combining several exports.
+    """
     manifest_path = meshes_dir / "manifest.json"
     with manifest_path.open() as f:
         manifest = json.load(f)
 
-    clear_default_scene()
+    if clear:
+        clear_default_scene()
 
     atlas_name = manifest["atlas"]
     collection = bpy.data.collections.new(atlas_name)
@@ -73,6 +77,7 @@ def import_meshes(meshes_dir: Path) -> None:
 
     frame_viewport()
     print(f"Imported {len(manifest['regions'])} regions from '{atlas_name}'")
+    return list(collection.objects)
 
 
 if __name__ == "__main__":

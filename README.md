@@ -146,6 +146,7 @@ bash scenes/blackcap-root/run.sh
 Available scenes:
 
 - `blackcap-root`: Eurasian blackcap whole-brain surface.
+- `species-banner`: whole-brain surfaces of six species in a row, as a wide banner.
 - `allen-mouse-cortex`: Allen mouse cortical areas three levels below CTX (isocortical, olfactory and hippocampal areas, and cortical subplate subdivisions).
 
 Each scene gets its own subfolder named after the scene, e.g.
