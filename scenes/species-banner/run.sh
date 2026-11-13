@@ -1,5 +1,5 @@
 #!/bin/bash
-# Export the root meshes of atlases from different species and render them in a row.
+# Export the root meshes of atlases from different species and render them in a grid.
 set -euo pipefail
 
 SCENE_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -16,13 +16,15 @@ if ! command -v "$BLENDER" >/dev/null; then
     exit 1
 fi
 
-# One atlas per species; the scene orders them by brain size
+# The scene orders them by brain size
 ATLASES=(
-    mpin_zfish_1um
+    vfb_jrc2018u_neuropils_fly_0.519um
     columbia_cuttlefish_50um
-    hoops_tawny_dragon_20um
     eurasian_blackcap_25um
     allen_mouse_25um
+    lambada_dev_mouse_p3_25um
+    african_molerat_20um
+    nmt_arm_sym_macaque_250um
     allen_human_500um
 )
 

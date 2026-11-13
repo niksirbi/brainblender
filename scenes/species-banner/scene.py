@@ -1,4 +1,4 @@
-"""Root meshes of several species in a row, as a wide banner.
+"""Root meshes of several species in a grid, as a wide banner.
 
 Brains are ordered by real size, then rescaled to a similar apparent size.
 
@@ -32,6 +32,7 @@ CAMERA_RIGHT = CAMERA_ROTATION @ Vector((1, 0, 0))
 CAMERA_UP = CAMERA_ROTATION @ Vector((0, 1, 0))
 
 # In units of a brain's apparent size (each is scaled to unit on-screen area)
+COLUMNS = 4
 GAP = 0.25
 MARGIN = 0.2
 RESOLUTION_X = 3000
@@ -39,7 +40,18 @@ RESOLUTION_X = 3000
 # One colour per brain, smallest to largest. Muted tones inspired by Figure 1 of
 # Friedrich et al. (2026), "A precise atlas of the human subcortex", bioRxiv,
 # https://doi.org/10.64898/2026.02.13.705755
-PALETTE = ["#6F8FBF", "#D98C2E", "#D4918C", "#5F8F7B", "#B5403E", "#A6949E"]
+PALETTE = [
+    "#6F8FBF",
+    "#D98C2E",
+    "#D4918C",
+    "#5F8F7B",
+    "#B5403E",
+    "#A6949E",
+    "#3F4F85",
+    "#C9A56A",
+    "#A9BDDB",
+    "#8C6A8E",
+]
 ROUGHNESS = 0.8  # matte, clay-like surface
 BACKGROUND = (1.0, 1.0, 1.0)
 
@@ -82,13 +94,13 @@ def flatten_onto_background(path: Path, color: tuple[float, float, float]) -> No
     image.save()
 
 
-def arrange_in_row(brains: list[bpy.types.Object]) -> tuple[float, float]:
-    """Line the brains up along the camera's horizontal axis.
+def arrange_in_grid(brains: list[bpy.types.Object]) -> tuple[float, float]:
+    """Lay the brains out in rows of COLUMNS, in the camera's image plane.
 
-    Returns the (width, height) of the row as seen by the camera.
+    The grid's top-left corner is at the origin. Returns its (width, height) as
+    seen by the camera.
     """
-    cursor = 0.0
-    row_height = 0.0
+    cells = []  # (brain, scale, width, height, center) per brain
     for brain in brains:
         # Vertices rather than bounding-box corners, which overstate oblique extents
         points = [v.co for v in brain.data.vertices]
@@ -96,21 +108,36 @@ def arrange_in_row(brains: list[bpy.types.Object]) -> tuple[float, float]:
         bottom, top = extent(points, CAMERA_UP)
         # Equal on-screen area keeps elongated and compact brains balanced
         scale = ((right - left) * (top - bottom)) ** -0.5
-        width, height = (right - left) * scale, (top - bottom) * scale
-
         center = CAMERA_RIGHT * (left + right) / 2 + CAMERA_UP * (bottom + top) / 2
-        brain.scale = (scale,) * 3
-        brain.location = CAMERA_RIGHT * (cursor + width / 2) - scale * center
-        cursor += width + GAP
-        row_height = max(row_height, height)
-    return cursor - GAP, row_height
+        cells.append(
+            (brain, scale, (right - left) * scale, (top - bottom) * scale, center)
+        )
+
+    rows = [cells[i : i + COLUMNS] for i in range(0, len(cells), COLUMNS)]
+    row_widths = [sum(c[2] for c in row) + GAP * (len(row) - 1) for row in rows]
+    grid_width = max(row_widths)
+
+    y = 0.0
+    for row, row_width in zip(rows, row_widths, strict=True):
+        row_height = max(c[3] for c in row)
+        x = (grid_width - row_width) / 2  # centre shorter rows
+        for brain, scale, width, _, center in row:
+            brain.scale = (scale,) * 3
+            brain.location = (
+                CAMERA_RIGHT * (x + width / 2)
+                - CAMERA_UP * (y + row_height / 2)
+                - scale * center
+            )
+            x += width + GAP
+        y += row_height + GAP
+    return grid_width, y - GAP
 
 
-def add_banner_camera(row_width: float, row_height: float) -> None:
-    """Add an orthographic camera framing the row, sizing the render to fit it."""
+def add_banner_camera(grid_width: float, grid_height: float) -> None:
+    """Add an orthographic camera framing the grid, sizing the render to fit it."""
     scene = bpy.context.scene
-    frame_width = row_width + 2 * MARGIN
-    frame_height = row_height + 2 * MARGIN
+    frame_width = grid_width + 2 * MARGIN
+    frame_height = grid_height + 2 * MARGIN
     scene.render.resolution_x = RESOLUTION_X
     scene.render.resolution_y = round(RESOLUTION_X * frame_height / frame_width)
     scene.render.resolution_percentage = 100
@@ -120,8 +147,9 @@ def add_banner_camera(row_width: float, row_height: float) -> None:
     scene.camera = cam
     cam.data.type = "ORTHO"
     cam.data.ortho_scale = max(frame_width, frame_height)
+    grid_center = CAMERA_RIGHT * grid_width / 2 - CAMERA_UP * grid_height / 2
     # Far enough back that no brain crosses the camera plane
-    cam.location = CAMERA_RIGHT * row_width / 2 + VIEW_DIRECTION * 10
+    cam.location = grid_center + VIEW_DIRECTION * 10
     cam.rotation_euler = CAMERA_ROTATION.to_euler()
 
 
@@ -134,7 +162,7 @@ if __name__ == "__main__":
     for brain, hex_color in zip(brains, PALETTE, strict=False):
         set_material(brain, hex_color)
 
-    add_banner_camera(*arrange_in_row(brains))
+    add_banner_camera(*arrange_in_grid(brains))
     add_light(VIEW_DIRECTION)
     bpy.context.scene.render.film_transparent = True
     render(output_png)
