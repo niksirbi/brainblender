@@ -36,8 +36,9 @@ GAP = 0.25
 MARGIN = 0.2
 RESOLUTION_X = 3000
 
-# One colour per brain, smallest to largest
-PALETTE = ["#4E79A7", "#F28E2B", "#59A14F", "#E15759", "#B07AA1", "#76B7B2"]
+# One colour per brain, smallest to largest: muted, earthy tones
+PALETTE = ["#6F8FBF", "#D98C2E", "#D4918C", "#5F8F7B", "#B5403E", "#A6949E"]
+ROUGHNESS = 0.8  # matte, clay-like surface
 BACKGROUND = (1.0, 1.0, 1.0)
 
 
@@ -52,13 +53,14 @@ def size(obj: bpy.types.Object) -> float:
     return (Vector(obj.bound_box[6]) - Vector(obj.bound_box[0])).length
 
 
-def set_color(obj: bpy.types.Object, hex_color: str) -> None:
-    """Set the base colour of the object's material from an sRGB hex string."""
+def set_material(obj: bpy.types.Object, hex_color: str) -> None:
+    """Give the object a matte material with the given sRGB hex colour."""
     srgb = [int(hex_color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
     linear = Color(srgb).from_srgb_to_scene_linear()
     nodes = obj.active_material.node_tree.nodes
     bsdf = next(n for n in nodes if n.type == "BSDF_PRINCIPLED")
     bsdf.inputs["Base Color"].default_value = (*linear, 1.0)
+    bsdf.inputs["Roughness"].default_value = ROUGHNESS
 
 
 def flatten_onto_background(path: Path, color: tuple[float, float, float]) -> None:
@@ -128,7 +130,7 @@ if __name__ == "__main__":
         brains += import_meshes(manifest.parent, clear=i == 0)
     brains.sort(key=size)
     for brain, hex_color in zip(brains, PALETTE, strict=False):
-        set_color(brain, hex_color)
+        set_material(brain, hex_color)
 
     add_banner_camera(*arrange_in_row(brains))
     add_light(VIEW_DIRECTION)
