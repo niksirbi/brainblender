@@ -17,6 +17,7 @@ from mathutils import Color, Vector
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "brainblender/blender"))
 
 from import_meshes import import_meshes  # noqa: E402
+from palette import PALETTE  # noqa: E402
 from scene_setup import (  # noqa: E402
     ANTERIOR,
     RIGHT,
@@ -37,21 +38,6 @@ GAP = 0.25
 MARGIN = 0.2
 RESOLUTION_X = 3000
 
-# One colour per brain, smallest to largest. Muted tones inspired by Figure 1 of
-# Friedrich et al. (2026), "A precise atlas of the human subcortex", bioRxiv,
-# https://doi.org/10.64898/2026.02.13.705755
-PALETTE = [
-    "#6F8FBF",
-    "#D98C2E",
-    "#D4918C",
-    "#5F8F7B",
-    "#B5403E",
-    "#A6949E",
-    "#3F4F85",
-    "#C9A56A",
-    "#A9BDDB",
-    "#8C6A8E",
-]
 ROUGHNESS = 0.8  # matte, clay-like surface
 BACKGROUND = (1.0, 1.0, 1.0)
 
@@ -159,6 +145,7 @@ if __name__ == "__main__":
     for i, manifest in enumerate(sorted(meshes_dir.glob("*/manifest.json"))):
         brains += import_meshes(manifest.parent, clear=i == 0)
     brains.sort(key=size)
+    # One colour per brain, smallest to largest
     for brain, hex_color in zip(brains, PALETTE, strict=False):
         set_material(brain, hex_color)
 
