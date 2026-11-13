@@ -36,7 +36,9 @@ GAP = 0.25
 MARGIN = 0.2
 RESOLUTION_X = 3000
 
-# One colour per brain, smallest to largest: muted, earthy tones
+# One colour per brain, smallest to largest. Muted tones inspired by Figure 1 of
+# Friedrich et al. (2026), "A precise atlas of the human subcortex", bioRxiv,
+# https://doi.org/10.64898/2026.02.13.705755
 PALETTE = ["#6F8FBF", "#D98C2E", "#D4918C", "#5F8F7B", "#B5403E", "#A6949E"]
 ROUGHNESS = 0.8  # matte, clay-like surface
 BACKGROUND = (1.0, 1.0, 1.0)
