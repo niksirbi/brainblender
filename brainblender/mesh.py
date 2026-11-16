@@ -1,8 +1,14 @@
 """Mesh processing: smoothing and decimation."""
 
+import multiprocessing
+import os
+from collections import deque
+from collections.abc import Iterable, Iterator
+from concurrent.futures import Future, ProcessPoolExecutor
 from typing import Literal
 
 import numpy as np
+import pymeshlab
 import trimesh
 import trimesh.smoothing
 
@@ -102,20 +108,96 @@ def smooth(
     return mesh
 
 
-def decimate(mesh: trimesh.Trimesh, ratio: float = 0.5) -> trimesh.Trimesh:
-    """Decimate a mesh to a fraction of its original face count.
+def decimate(mesh: trimesh.Trimesh, max_faces: int) -> trimesh.Trimesh:
+    """Decimate a mesh down to at most `max_faces` faces.
+
+    Meshes that already have `max_faces` faces or fewer are returned unchanged.
+    Uses MeshLab's quadric edge collapse, which rejects collapses that would
+    change the topology or flip a face, so a clean mesh stays manifold.
 
     Parameters
     ----------
     mesh:
         The mesh to decimate.
-    ratio:
-        Target ratio of faces to keep (0.0-1.0).
+    max_faces:
+        Maximum number of faces to keep.
 
     Returns
     -------
     trimesh.Trimesh
-        A new decimated mesh.
+        The original mesh, or a new decimated mesh.
 
     """
-    return mesh.simplify_quadric_decimation(percent=ratio)
+    if len(mesh.faces) <= max_faces:
+        return mesh
+    mesh_set = pymeshlab.MeshSet()
+    mesh_set.add_mesh(pymeshlab.Mesh(mesh.vertices, mesh.faces))
+    mesh_set.meshing_decimation_quadric_edge_collapse(
+        targetfacenum=max_faces,
+        preservetopology=True,
+        preservenormal=True,
+        # Keeps triangles well-shaped on flat areas (e.g. where the atlas
+        # volume cuts the brain), which otherwise collapse into sliver fans.
+        planarquadric=True,
+        planarweight=0.01,
+    )
+    decimated = mesh_set.current_mesh()
+    return to_trimesh(decimated.vertex_matrix(), decimated.face_matrix())
+
+
+def decimate_many(
+    meshes: Iterable[trimesh.Trimesh], max_faces: int, jobs: int = 0
+) -> Iterator[trimesh.Trimesh]:
+    """Decimate several meshes, running the heavy ones in parallel.
+
+    Meshes are consumed lazily and yielded in their input order, so only a
+    few raw meshes are held in memory at a time.
+
+    Parameters
+    ----------
+    meshes:
+        The meshes to decimate.
+    max_faces:
+        Maximum number of faces to keep per mesh.
+    jobs:
+        Number of worker processes; 0 means one per CPU core and 1 decimates
+        in the calling process.
+
+    Yields
+    ------
+    trimesh.Trimesh
+        Each mesh, decimated where it exceeded `max_faces`.
+
+    """
+    jobs = jobs or os.cpu_count() or 1
+    if jobs == 1:
+        yield from (decimate(mesh, max_faces) for mesh in meshes)
+        return
+
+    pending: deque[trimesh.Trimesh | Future[trimesh.Trimesh]] = deque()
+    n_futures = 0
+    # MeshLab is not thread-safe, so parallel decimation needs processes;
+    # spawned ones avoid forking a parent that may hold threads.
+    with ProcessPoolExecutor(
+        jobs, mp_context=multiprocessing.get_context("spawn")
+    ) as pool:
+        for mesh in meshes:
+            if len(mesh.faces) > max_faces:
+                pending.append(pool.submit(decimate, mesh, max_faces))
+                n_futures += 1
+            else:
+                pending.append(mesh)
+            # Yield what is ready; block only once too many heavy meshes are queued
+            while pending and (
+                not isinstance(pending[0], Future)
+                or pending[0].done()
+                or n_futures > 2 * jobs
+            ):
+                n_futures -= isinstance(pending[0], Future)
+                yield _result(pending.popleft())
+        while pending:
+            yield _result(pending.popleft())
+
+
+def _result(mesh: trimesh.Trimesh | Future[trimesh.Trimesh]) -> trimesh.Trimesh:
+    return mesh.result() if isinstance(mesh, Future) else mesh
