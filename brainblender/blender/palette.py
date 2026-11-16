@@ -19,3 +19,6 @@ COLORS: dict[str, str] = {
 }
 
 PALETTE: tuple[str, ...] = tuple(COLORS.values())
+
+# Warm off-white that sits behind the palette without competing with it
+OFF_WHITE = "#F6F2EA"

@@ -16,24 +16,23 @@ if ! command -v "$BLENDER" >/dev/null; then
     exit 1
 fi
 
-# The scene orders them by brain size
-ATLASES=(
-    vfb_jrc2018u_neuropils_fly_0.519um
-    columbia_cuttlefish_50um
-    eurasian_blackcap_25um
-    allen_mouse_25um
-    lambada_dev_mouse_p3_25um
-    african_molerat_20um
-    nmt_arm_sym_macaque_250um
-    allen_human_500um
+# One row of the banner per line, top to bottom, with atlases left to right.
+# Blog posts crop the top and bottom quarters of the image, so only the middle
+# row stays fully visible there.
+ROWS=(
+    "vfb_jrc2018u_neuropils_fly_0.519um azba_zfish_4um african_molerat_20um"
+    "lambada_dev_mouse_p3_25um columbia_cuttlefish_50um eurasian_blackcap_25um allen_mouse_25um"
+    "nadkarni_mri_mouselemur_91um nmt_arm_sym_macaque_250um allen_human_500um"
 )
 
-for atlas in "${ATLASES[@]}"; do
-    uv run --project "$REPO_ROOT" brainblender export "$atlas" \
-        --regions root \
-        --output "$MESHES_DIR/$atlas"
+for row in "${ROWS[@]}"; do
+    for atlas in $row; do
+        uv run --project "$REPO_ROOT" brainblender export "$atlas" \
+            --regions root \
+            --output "$MESHES_DIR/$atlas"
+    done
 done
 
 "$BLENDER" --background \
     --python "$SCENE_DIR/scene.py" \
-    -- "$MESHES_DIR" "$RENDER_PNG"
+    -- "$MESHES_DIR" "$RENDER_PNG" "${ROWS[@]}"
