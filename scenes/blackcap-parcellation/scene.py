@@ -1,4 +1,6 @@
-"""Blackcap root mesh scene, viewed obliquely from anterior-superior-right.
+"""Blackcap regions two levels below root.
+
+Viewed obliquely from anterior-superior-right.
 
 Run with: blender --background --python scene.py -- <meshes_dir> <output_png>
 """

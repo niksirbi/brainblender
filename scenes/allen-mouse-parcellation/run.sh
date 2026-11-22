@@ -8,7 +8,7 @@ REPO_ROOT="$SCENE_DIR/../.."
 # Meshes and renders live outside the repo, in a per-machine folder (see README)
 DATA_DIR=${BRAINBLENDER_SCENES_DIR:-$HOME/brainblender-scenes}/$(basename "$SCENE_DIR")
 MESHES_DIR=$DATA_DIR/meshes
-RENDER_PNG=$DATA_DIR/renders/grey.png
+RENDER_PNG=$DATA_DIR/renders/parcellation.png
 
 BLENDER=${BLENDER:-blender}
 if ! command -v "$BLENDER" >/dev/null; then

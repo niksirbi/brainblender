@@ -140,17 +140,17 @@ export BLENDER="/Applications/Blender.app/Contents/MacOS/Blender"
 ### Running a scene
 
 ```bash
-bash scenes/blackcap-root/run.sh
+bash scenes/blackcap-parcellation/run.sh
 ```
 
 Available scenes:
 
-- `blackcap-root`: Eurasian blackcap whole-brain surface.
+- `blackcap-parcellation`: Eurasian blackcap regions two levels below root (major divisions and pallial subdivisions).
 - `species-banner`: whole-brain surfaces from ten atlases of different species in rows, as a 2240×1260 banner. The rows are set in `run.sh`. Colours inspired by Figure 1 of [Friedrich et al. (2026)](https://doi.org/10.64898/2026.02.13.705755).
-- `allen-mouse-grey`: Allen mouse grey matter regions five levels below grey, which splits the cortex into its areas (e.g. MO, SS, VIS).
+- `allen-mouse-parcellation`: Allen mouse grey matter regions five levels below grey, which splits the cortex into its areas (e.g. MO, SS, VIS).
 
 Each scene gets its own subfolder named after the scene, e.g.
-`$BRAINBLENDER_SCENES_DIR/blackcap-root/`, with `meshes/` and `renders/` inside.
+`$BRAINBLENDER_SCENES_DIR/blackcap-parcellation/`, with `meshes/` and `renders/` inside.
 
 ## Resources
 
