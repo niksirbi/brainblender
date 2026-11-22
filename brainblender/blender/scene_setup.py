@@ -20,13 +20,13 @@ def script_args() -> list[str]:
 
 
 def scene_args() -> tuple[Path, Path]:
-    """Return (meshes_dir, output_png) from the script args."""
+    """Return (input, output_png) from the script args.
+
+    The input is a meshes directory (mesh scenes) or a volume.json file.
+    """
     args = script_args()
     if len(args) != 2:
-        print(
-            "Usage: blender --background --python <scene.py> -- "
-            "<meshes_dir> <output_png>"
-        )
+        print("Usage: blender --background --python <scene.py> -- <input> <output_png>")
         sys.exit(1)
     return Path(args[0]), Path(args[1])
 
@@ -76,8 +76,11 @@ def add_light(view_direction: Vector, energy: float = 3.0) -> None:
 
 
 def render(path: Path) -> None:
-    """Render the active camera to a PNG."""
+    """Render the active camera to a PNG, saving the scene next to it as .blend."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    blend = path.with_suffix(".blend")
+    blend.unlink(missing_ok=True)  # overwriting would leave a .blend1 backup
+    bpy.ops.wm.save_as_mainfile(filepath=str(blend), copy=True)
     scene = bpy.context.scene
     scene.render.image_settings.file_format = "PNG"
     scene.render.filepath = str(path)

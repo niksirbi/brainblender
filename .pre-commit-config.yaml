@@ -27,11 +27,14 @@ repos:
       hooks:
           - id: ruff-check
           - id: ruff-format
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v2.4.0
+    - repo: local
       hooks:
           - id: mypy
-            exclude: ^(tests|docs|scenes)/
+            name: mypy
+            entry: uv run mypy brainblender/
+            language: system
+            pass_filenames: false
+            types: [python]
     - repo: https://github.com/codespell-project/codespell
       rev: v2.4.3
       hooks:

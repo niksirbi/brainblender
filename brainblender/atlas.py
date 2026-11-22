@@ -151,7 +151,34 @@ def _fetch_pyramid(
     return zarr_path
 
 
-def fetch_template(atlas: BrainGlobeAtlas, finest: int) -> Path:
+def template_location(metadata: dict, reference: str | None = None) -> str:
+    """Return the storage location of the template or an additional reference.
+
+    Parameters
+    ----------
+    metadata:
+        Atlas metadata (``BrainGlobeAtlas.metadata``).
+    reference:
+        Name of an additional reference; None for the main template.
+
+    Returns
+    -------
+    str
+        Location relative to the BrainGlobe directory (no leading ``/``).
+
+    """
+    if reference is None:
+        return metadata["annotation_set"]["template"]["location"][1:]
+    references = {r["name"]: r for r in metadata.get("additional_references", [])}
+    if reference not in references:
+        available = ", ".join(references) or "none"
+        raise ValueError(f"No reference '{reference}'; available: {available}")
+    return references[reference]["location"][1:]
+
+
+def fetch_template(
+    atlas: BrainGlobeAtlas, finest: int, reference: str | None = None
+) -> Path:
     """Download template pyramid levels from the coarsest down to `finest`.
 
     Parameters
@@ -160,6 +187,8 @@ def fetch_template(atlas: BrainGlobeAtlas, finest: int) -> Path:
         A loaded BrainGlobeAtlas instance.
     finest:
         Finest pyramid level to download (0 = full resolution).
+    reference:
+        Additional reference to fetch instead of the main template.
 
     Returns
     -------
@@ -167,7 +196,7 @@ def fetch_template(atlas: BrainGlobeAtlas, finest: int) -> Path:
         Local path of the template OME-Zarr.
 
     """
-    location = atlas.metadata["annotation_set"]["template"]["location"][1:]
+    location = template_location(atlas.metadata, reference)
     return _fetch_pyramid(atlas, location, V3_TEMPLATE_NAME, finest)
 
 

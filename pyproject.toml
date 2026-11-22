@@ -11,6 +11,7 @@ dependencies = [
     "pymeshlab>=2025.7.post1",
     "trimesh>=5.2.0",
     "typer>=0.27.3",
+    "zarr>=3.4.1",
 ]
 
 [project.scripts]
@@ -24,6 +25,7 @@ dev = [
     "codespell",
     "pytest>=9.1.1",
     "setuptools_scm",
+    "pillow>=13.0.0",
 ]
 
 [build-system]
@@ -44,6 +46,10 @@ module = [
     "meshio.*",
     "trimesh.*",
     "pymeshlab.*",
+    "bpy.*",
+    "mathutils.*",
+    "cut",
+    "import_meshes",
 ]
 ignore_missing_imports = true
 
