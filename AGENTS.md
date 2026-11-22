@@ -9,7 +9,7 @@
 - Python 3.12+, managed with `uv`
 - CLI via `typer`
 - Brain atlas data via `brainglobe-atlasapi` v3 (OME-Zarr atlases on S3, cached in `~/.brainglobe/brainglobe-atlasapi/`)
-- Mesh processing via `trimesh` + `fast-simplification`
+- Mesh processing via `trimesh` (smoothing) + `pymeshlab` (decimation)
 - Blender import via standalone `bpy` script
 
 ## Project structure
@@ -26,6 +26,7 @@ brainblender/
     __init__.py
     import_meshes.py # Standalone Blender script (bpy + stdlib only)
     scene_setup.py   # Shared scene helpers: directions, camera, light, render (+ .blend)
+    palette.py       # Named colours shared across scenes
     cut.py           # Cut-plane and camera geometry (stdlib only, unit-tested)
     volume_setup.py  # Load a template with Microscopy Nodes, pose it like meshes, style, cut
 scenes/<name>/       # One folder per scene workflow

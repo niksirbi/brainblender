@@ -13,17 +13,22 @@ ANTERIOR = Vector((0, 1, 0))
 SUPERIOR = Vector((0, 0, 1))
 
 
+def script_args() -> list[str]:
+    """Return the args Blender passes to the script after '--'."""
+    argv = sys.argv
+    return argv[argv.index("--") + 1 :] if "--" in argv else []
+
+
 def scene_args() -> tuple[Path, Path]:
-    """Return (input, output_png) from the args Blender passes after '--'.
+    """Return (input, output_png) from the script args.
 
     The input is a meshes directory (mesh scenes) or a volume.json file.
     """
-    argv = sys.argv
-    script_args = argv[argv.index("--") + 1 :] if "--" in argv else []
-    if len(script_args) != 2:
+    args = script_args()
+    if len(args) != 2:
         print("Usage: blender --background --python <scene.py> -- <input> <output_png>")
         sys.exit(1)
-    return Path(script_args[0]), Path(script_args[1])
+    return Path(args[0]), Path(args[1])
 
 
 def scene_bounds() -> tuple[Vector, float]:

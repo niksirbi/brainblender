@@ -96,6 +96,11 @@ The intention is to leave light, clean meshes almost untouched while cleaning up
 Override these defaults with `--max-faces` (`0` turns decimation off)
 and `--smooth` (`0` turns smoothing off).
 
+Decimation is the slow step: it takes roughly 1 s per 100,000 faces of the original mesh,
+almost regardless of `--max-faces`.
+Meshes are therefore decimated in parallel, one per CPU core by default (`--jobs` sets the number,
+`--jobs 1` turns this off), which helps whenever an export holds several dense meshes.
+
 ### Import into Blender
 
 This step requires the `blender` command (see [Installation](#blender)).
@@ -143,6 +148,7 @@ bash scenes/blackcap-root/run.sh
 Available scenes:
 
 - `blackcap-root`: Eurasian blackcap whole-brain surface.
+- `species-banner`: whole-brain surfaces from ten atlases of different species in rows, as a 2240×1260 banner. The rows are set in `run.sh`. Colours inspired by Figure 1 of [Friedrich et al. (2026)](https://doi.org/10.64898/2026.02.13.705755).
 - `allen-mouse-cortex`: Allen mouse cortical areas three levels below CTX (isocortical, olfactory and hippocampal areas, and cortical subplate subdivisions).
 - `allen-mouse-template-cut`: Allen mouse template volume with the front third cut away, showing white and grey matter on the coronal cut face (needs [Microscopy Nodes](#microscopy-nodes-optional)).
 
