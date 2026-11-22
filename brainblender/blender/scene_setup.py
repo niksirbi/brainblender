@@ -1,6 +1,5 @@
 """Shared helpers for scene scripts that run inside Blender (bpy + stdlib only)."""
 
-import math
 import sys
 from pathlib import Path
 
@@ -45,25 +44,41 @@ def scene_bounds() -> tuple[Vector, float]:
 
 
 def add_camera(
-    target: Vector, radius: float, view_direction: Vector, margin: float = 1.1
+    target: Vector,
+    radius: float,
+    view_direction: Vector,
+    margin: float = 1.15,
+    resolution: tuple[int, int] = (1920, 1920),
 ) -> None:
-    """Add a camera along view_direction (target → camera) that fits the sphere.
+    """Add a camera along view_direction (target → camera) that frames all meshes.
 
-    margin is the padding around the sphere in the frame.
+    Also sets the render resolution, since the framing depends on its aspect.
+    The meshes fill 1/margin of the frame along its tighter side.
     """
     view_direction = view_direction.normalized()
     scene = bpy.context.scene
+    scene.render.resolution_x, scene.render.resolution_y = resolution
     cam = bpy.data.objects.new("Camera", bpy.data.cameras.new("Camera"))
     scene.collection.objects.link(cam)
     scene.camera = cam
+    # A long lens keeps the camera far back, so perspective doesn't distort the brain
+    cam.data.lens = 120
 
-    # The camera's angle spans the wider (horizontal) side; fit the narrower one.
-    aspect = scene.render.resolution_y / scene.render.resolution_x
-    half_fov = math.atan(math.tan(cam.data.angle / 2) * min(aspect, 1))
-    distance = margin * radius / math.sin(half_fov)
-
-    cam.location = target + view_direction * distance
+    # Start outside the scene, looking along -view_direction, then let Blender
+    # move the camera so the mesh vertices just fill the frame.
+    cam.location = target + view_direction * 10 * radius
     cam.rotation_euler = (-view_direction).to_track_quat("-Z", "Y").to_euler()
+    coords = [
+        c
+        for obj in scene.objects
+        if obj.type == "MESH"
+        for v in obj.data.vertices
+        for c in obj.matrix_world @ v.co
+    ]
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    cam.location, _ = cam.camera_fit_coords(depsgraph, coords)
+    # A shorter lens zooms out around the frame centre, leaving the margin.
+    cam.data.lens /= margin
 
 
 def add_light(view_direction: Vector, energy: float = 3.0) -> None:
