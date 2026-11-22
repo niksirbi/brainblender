@@ -46,6 +46,10 @@ module = [
     "meshio.*",
     "trimesh.*",
     "pymeshlab.*",
+    "bpy.*",
+    "mathutils.*",
+    "cut",
+    "import_meshes",
 ]
 ignore_missing_imports = true
 
