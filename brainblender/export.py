@@ -81,7 +81,8 @@ def export_all(
 
     regions_manifest: list[dict] = []
     for metadata, mesh in meshes:
-        filename = f"{metadata['acronym']}.ply"
+        # Some acronyms contain "/" (e.g. layer 2/3), which isn't valid in a filename
+        filename = f"{metadata['acronym'].replace('/', '_')}.ply"
         export_mesh(mesh, output_dir / filename)
         regions_manifest.append(
             {
