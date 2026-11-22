@@ -1,5 +1,6 @@
 #!/bin/bash
-# Export the Allen mouse cortical areas three levels below CTX and render them.
+# Export the Allen mouse cortical areas three levels below CTX, plus the major
+# divisions outside the cortex, and render them.
 set -euo pipefail
 
 SCENE_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -17,10 +18,13 @@ if ! command -v "$BLENDER" >/dev/null; then
 fi
 
 # Cortical areas three levels below CTX, or the leaf where a branch ends sooner (CLA, LA, PA):
-# the leaves of `brainblender list-regions allen_mouse_25um --children-of CTX --depth 3`
+# the leaves of `brainblender list-regions allen_mouse_25um --children-of CTX --depth 3`.
+# Everything else as the Allen major divisions: striatum, pallidum, thalamus,
+# hypothalamus, midbrain, pons, medulla and cerebellum.
 uv run --project "$REPO_ROOT" brainblender export allen_mouse_25um \
     --children-of CTX \
     --depth 3 \
+    --regions STR,PAL,TH,HY,MB,P,MY,CB \
     --output "$MESHES_DIR"
 
 "$BLENDER" --background \

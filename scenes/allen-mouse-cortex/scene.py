@@ -1,4 +1,4 @@
-"""Allen mouse cortical areas three levels below CTX.
+"""Allen mouse cortical areas three levels below CTX, plus the major divisions.
 
 Viewed obliquely from anterior-superior-right.
 
