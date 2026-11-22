@@ -147,7 +147,7 @@ Available scenes:
 
 - `blackcap-root`: Eurasian blackcap whole-brain surface.
 - `species-banner`: whole-brain surfaces from ten atlases of different species in rows, as a 2240×1260 banner. The rows are set in `run.sh`. Colours inspired by Figure 1 of [Friedrich et al. (2026)](https://doi.org/10.64898/2026.02.13.705755).
-- `allen-mouse-cortex`: Allen mouse cortical areas three levels below CTX (isocortical, olfactory and hippocampal areas, and cortical subplate subdivisions), plus the major divisions outside the cortex (STR, PAL, TH, HY, MB, P, MY, CB).
+- `allen-mouse-grey`: Allen mouse grey matter regions five levels below grey, which splits the cortex into its areas (e.g. MO, SS, VIS).
 
 Each scene gets its own subfolder named after the scene, e.g.
 `$BRAINBLENDER_SCENES_DIR/blackcap-root/`, with `meshes/` and `renders/` inside.

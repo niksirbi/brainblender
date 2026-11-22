@@ -1,4 +1,4 @@
-"""Allen mouse cortical areas three levels below CTX, plus the major divisions.
+"""Allen mouse grey matter regions five levels below grey.
 
 Viewed obliquely from anterior-superior-right.
 
