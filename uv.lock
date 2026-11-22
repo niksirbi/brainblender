@@ -308,6 +308,7 @@ dependencies = [
     { name = "pymeshlab" },
     { name = "trimesh" },
     { name = "typer" },
+    { name = "zarr" },
 ]
 
 [package.dev-dependencies]
@@ -327,6 +328,7 @@ requires-dist = [
     { name = "pymeshlab", specifier = ">=2025.7.post1" },
     { name = "trimesh", specifier = ">=5.2.0" },
     { name = "typer", specifier = ">=0.27.3" },
+    { name = "zarr", specifier = ">=3.4.1" },
 ]
 
 [package.metadata.requires-dev]
