@@ -50,3 +50,18 @@ def test_level_resolutions_in_micrometres() -> None:
         ],
     }
     assert level_resolutions(multiscale) == [("s0", "25 um"), ("s1", "50x100x50 um")]
+
+
+def test_children_of_defaults_to_root_like_list_regions() -> None:
+    """Without --children-of, selection starts from root, unless only --regions."""
+    atlas = make_atlas()
+    assert resolve_regions(atlas) == ["A", "B"]
+    assert resolve_regions(atlas, depth=2) == ["A", "B1", "B2"]
+    assert resolve_regions(atlas, regions=["B1"]) == ["B1"]
+
+
+def test_children_of_alone_takes_direct_children() -> None:
+    """--children-of without --depth fetches one level, so meshes don't overlap."""
+    atlas = make_atlas()
+    assert resolve_regions(atlas, children_of="B") == ["B1", "B2"]
+    assert resolve_regions(atlas, children_of="B", depth=0) == ["B"]

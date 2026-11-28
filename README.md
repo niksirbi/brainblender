@@ -101,6 +101,11 @@ List regions below a specific parent region (other than root):
 uv run brainblender list-regions allen_mouse_50um --children-of grey --depth 2
 ```
 
+`--children-of` sets the region to start from (default: root),
+and `--depth` sets how many levels below it to show (default: 1).
+Branches that end sooner are shown down to their deepest region.
+To see the whole tree, pass a large depth, e.g. `--depth 99`.
+
 ### Working with meshes
 
 The `brainblender fetch-meshes` command fetches, decimates, smooths, and saves
@@ -123,10 +128,11 @@ a `manifest.json` describing the meshes. By default, the meshes are saved
 to `./meshes/` in the current working directory, but you can change this
 with the `--output` argument.
 
-With `--children-of` and `--depth N`, the command takes the regions
-`N` levels below the parent. If a given branch of the hierarchy ends sooner
-than `N`, it takes the leaf region instead (i.e. the deepest region
-reached in that branch). This ensures that the meshes cover the whole parent region.
+`--children-of` and `--depth` work as in
+[`list-regions`](#explore-atlas-region-hierarchy), except that only the bottom
+of the tree is fetched: the regions `--depth` levels below the parent,
+plus the deepest region of any branch that ends sooner.
+Together, these cover the whole parent region without overlapping.
 
 By default, meshes with more than 100,000 faces are decimated down to that number,
 and every mesh then gets 5 iterations of Taubin smoothing.

@@ -63,10 +63,12 @@ def resolve_regions(
     regions:
         Explicit list of region acronyms.
     children_of:
-        Parent region acronym for hierarchy-based selection.
+        Parent region acronym for hierarchy-based selection. Defaults to the
+        root region, unless only `regions` are given.
     depth:
         Hierarchy level below `children_of`; leaves above that level are
-        included too. None means all descendants.
+        included too. Defaults to 1 (the direct children) when `children_of`
+        is given.
 
     Returns
     -------
@@ -81,12 +83,12 @@ def resolve_regions(
             atlas.structures[r]  # validate existence
             result.add(r)
 
+    if children_of is None and (depth is not None or not regions):
+        children_of = atlas.structures[atlas.hierarchy.root]["acronym"]
+
     if children_of:
-        if depth is None:
-            descendants = atlas.get_structure_descendants(children_of)
-        else:
-            descendants = _get_regions_at_depth(atlas, children_of, depth)
-        result.update(descendants)
+        depth = 1 if depth is None else depth
+        result.update(_get_regions_at_depth(atlas, children_of, depth))
 
     return sorted(result)
 

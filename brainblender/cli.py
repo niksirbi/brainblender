@@ -48,7 +48,7 @@ def list_regions(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
     depth: Annotated[
         int, typer.Option(help="Levels to show below the starting region")
-    ] = 2,
+    ] = 1,
     children_of: Annotated[
         str,
         typer.Option(help="Region to start the tree from"),
@@ -122,13 +122,13 @@ def fetch_meshes(
     ] = None,
     children_of: Annotated[
         str | None,
-        typer.Option(help="Fetch children of this region"),
+        typer.Option(help="Fetch children of this region (default: root)"),
     ] = None,
     hierarchy_depth: Annotated[
         int | None,
         typer.Option(
             "--depth",
-            help="Levels below --children-of (shallower leaves included)",
+            help="Levels below --children-of (default 1; shallower leaves included)",
         ),
     ] = None,
     max_faces: Annotated[
@@ -168,10 +168,6 @@ def fetch_meshes(
     acronyms = resolve_regions(
         atlas, regions=regions, children_of=children_of, depth=hierarchy_depth
     )
-    if not acronyms:
-        typer.echo("No regions matched. Specify --regions or --children-of.")
-        raise typer.Exit(code=1)
-
     typer.echo(f"Processing {len(acronyms)} region(s) from '{atlas_name}'...")
 
     def raw_meshes() -> Iterator[trimesh.Trimesh]:
