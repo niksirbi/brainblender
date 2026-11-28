@@ -14,6 +14,7 @@ from brainblender.atlas import (
     fetch_template,
     get_region_metadata,
     load_atlas,
+    pyramid_levels,
     resolve_regions,
 )
 from brainblender.export import export_all
@@ -35,6 +36,9 @@ def info(
     print(f"Resolution: {atlas.resolution} um")
     print(f"Shape:      {atlas.shape} voxels")
     print(f"Regions:    {len(atlas.structures_list)}")
+    print("Available volume levels:")
+    for kind, levels in pyramid_levels(atlas).items():
+        print(f"  {kind + ':':<12}" + ", ".join(f"{p} {s}" for p, s in levels))
 
 
 @app.command()
@@ -69,7 +73,8 @@ def list_regions(
 
 
 FinestOption = Annotated[
-    int, typer.Option(help="Finest pyramid level to fetch (0=full resolution)")
+    int,
+    typer.Option(help="Finest pyramid level to fetch (0=full resolution; see `info`)"),
 ]
 
 

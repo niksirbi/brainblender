@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from treelib import Tree
 
-from brainblender.atlas import levels_to_fetch, resolve_regions
+from brainblender.atlas import level_resolutions, levels_to_fetch, resolve_regions
 
 
 def make_atlas() -> SimpleNamespace:
@@ -36,3 +36,17 @@ def test_levels_to_fetch_coarsest_first() -> None:
     assert levels_to_fetch(4, 0) == [3, 2, 1, 0]
     with pytest.raises(ValueError):
         levels_to_fetch(4, 4)
+
+
+def test_level_resolutions_in_micrometres() -> None:
+    """Levels are labelled in um, skipping the channel axis; anisotropy is kept."""
+    mm = {"unit": "millimeter"}
+    scales = {"s0": [1, 0.025, 0.025, 0.025], "s1": [1, 0.05, 0.1, 0.05]}
+    multiscale = {
+        "axes": [{"name": "c"}, mm, mm, mm],
+        "datasets": [
+            {"path": p, "coordinateTransformations": [{"scale": s}]}
+            for p, s in scales.items()
+        ],
+    }
+    assert level_resolutions(multiscale) == [("s0", "25 um"), ("s1", "50x100x50 um")]

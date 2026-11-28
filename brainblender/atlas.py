@@ -130,6 +130,78 @@ def levels_to_fetch(n_levels: int, finest: int) -> list[int]:
     return list(range(n_levels - 1, finest - 1, -1))
 
 
+_UM_PER_UNIT = {"millimeter": 1000.0, "micrometer": 1.0}
+
+
+def level_resolutions(multiscale: dict) -> list[tuple[str, str]]:
+    """Label each pyramid level of an OME-Zarr multiscale with its voxel size.
+
+    Parameters
+    ----------
+    multiscale:
+        One entry of the OME-Zarr ``multiscales`` list.
+
+    Returns
+    -------
+    list[tuple[str, str]]
+        ``(level path, voxel size)`` pairs from finest to coarsest,
+        e.g. ``("s2", "50 um")``, or ``"0.519x1x0.519 um"`` for anisotropic voxels.
+
+    """
+    # Spatial axes carry a unit; a channel axis, if any, does not
+    spatial = [i for i, ax in enumerate(multiscale["axes"]) if ax.get("unit")]
+    unit = multiscale["axes"][spatial[0]]["unit"]
+    factor, label = (_UM_PER_UNIT[unit], "um") if unit in _UM_PER_UNIT else (1, unit)
+    levels = []
+    for dataset in multiscale["datasets"]:
+        scale = dataset["coordinateTransformations"][0]["scale"]
+        sizes = [f"{round(scale[i] * factor, 6):g}" for i in spatial]
+        size = sizes[0] if len(set(sizes)) == 1 else "x".join(sizes)
+        levels.append((dataset["path"], f"{size} {label}"))
+    return levels
+
+
+def _read_multiscale(zarr_path: Path) -> dict:
+    """Read the first multiscale entry of a local OME-Zarr's metadata."""
+    attrs = json.loads((zarr_path / "zarr.json").read_text())["attributes"]
+    return attrs["ome"]["multiscales"][0]
+
+
+def _template_location(atlas: BrainGlobeAtlas) -> tuple[str, str]:
+    """Return the template's storage location and file name."""
+    location = atlas.metadata["annotation_set"]["template"]["location"][1:]
+    return location, V3_TEMPLATE_NAME
+
+
+def _annotation_location(atlas: BrainGlobeAtlas) -> tuple[str, str]:
+    """Return the annotation's storage location and file name."""
+    return atlas.metadata["annotation_set"]["location"][1:], V3_ANNOTATION_NAME
+
+
+def pyramid_levels(atlas: BrainGlobeAtlas) -> dict[str, list[tuple[str, str]]]:
+    """Return the template and annotation pyramid levels with their voxel sizes.
+
+    Parameters
+    ----------
+    atlas:
+        A loaded BrainGlobeAtlas instance.
+
+    Returns
+    -------
+    dict[str, list[tuple[str, str]]]
+        ``{"template": [...], "annotation": [...]}``, each as returned by
+        `level_resolutions`.
+
+    """
+    return {
+        kind: level_resolutions(_read_multiscale(atlas.root_dir / loc / name))
+        for kind, (loc, name) in (
+            ("template", _template_location(atlas)),
+            ("annotation", _annotation_location(atlas)),
+        )
+    }
+
+
 def _fetch_pyramid(
     atlas: BrainGlobeAtlas, location: str, name: str, finest: int
 ) -> Path:
@@ -138,14 +210,13 @@ def _fetch_pyramid(
     Levels already on disk are skipped.
     """
     zarr_path = atlas.root_dir / location / name
-    attrs = json.loads((zarr_path / "zarr.json").read_text())["attributes"]
-    datasets = attrs["ome"]["multiscales"][0]["datasets"]
-    for level in levels_to_fetch(len(datasets), finest):
-        path = datasets[level]["path"]
+    levels = level_resolutions(_read_multiscale(zarr_path))
+    for level in levels_to_fetch(len(levels), finest):
+        path, size = levels[level]
         if (zarr_path / path / "c").exists():  # same check the atlas API uses
-            print(f"  {path}: already downloaded")
+            print(f"  {path} ({size}): already downloaded")
             continue
-        print(f"  {path}: downloading...")
+        print(f"  {path} ({size}): downloading...")
         remote = remote_url_s3.format(f"{location}/{name}/{path}/")
         atlas.fs.get(remote, str(zarr_path / path), recursive=True)
     return zarr_path
@@ -167,8 +238,7 @@ def fetch_template(atlas: BrainGlobeAtlas, finest: int) -> Path:
         Local path of the template OME-Zarr.
 
     """
-    location = atlas.metadata["annotation_set"]["template"]["location"][1:]
-    return _fetch_pyramid(atlas, location, V3_TEMPLATE_NAME, finest)
+    return _fetch_pyramid(atlas, *_template_location(atlas), finest)
 
 
 def fetch_annotation(atlas: BrainGlobeAtlas, finest: int) -> Path:
@@ -190,5 +260,4 @@ def fetch_annotation(atlas: BrainGlobeAtlas, finest: int) -> Path:
         Local path of the annotation OME-Zarr.
 
     """
-    location = atlas.metadata["annotation_set"]["location"][1:]
-    return _fetch_pyramid(atlas, location, V3_ANNOTATION_NAME, finest)
+    return _fetch_pyramid(atlas, *_annotation_location(atlas), finest)

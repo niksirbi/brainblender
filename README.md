@@ -156,6 +156,7 @@ The template and annotation volumes of BrainGlobe atlases are
 stored as OME-Zarr volumes in
 [multi-scale pyramids](https://ome-zarr.readthedocs.io/en/stable/explanation/multiscale_pyramids.html),
 where `s0` is the full-resolution level, and `s1`, `s2`, etc. are downsampled levels.
+`brainblender info <atlas>` lists the available levels and their voxel sizes.
 
 Before you can import a volume into Blender with [Microscopy Nodes](https://extensions.blender.org/add-ons/microscopynodes/),
 you need to fetch the appropriate OME-Zarr file metadata **and**
@@ -207,7 +208,7 @@ Available scenes:
 
 - `blackcap-parcellation`: Eurasian blackcap regions two levels below root (major divisions and pallial subdivisions).
 - `allen-mouse-parcellation`: Allen mouse grey matter regions five levels below grey, which splits the cortex into its areas (e.g. MO, SS, VIS).
-- `species-banner`: whole-brain surfaces from ten atlases of different species in rows, as a 2240×1260 banner. The rows are set in `run.sh`. Colours inspired by Figure 1 of [Friedrich et al. (2026)](https://doi.org/10.64898/2026.02.13.705755).
+- `species-banner`: whole-brain surfaces from ten atlases of different species in rows, as a 2240x1260 banner. The rows are set in `run.sh`. Colours inspired by Figure 1 of [Friedrich et al. (2026)](https://doi.org/10.64898/2026.02.13.705755).
 
 Each scene gets its own subfolder named after the scene, e.g.
 `$BRAINBLENDER_SCENES_DIR/blackcap-parcellation/`, with `meshes/` and `renders/` inside.
