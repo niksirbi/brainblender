@@ -1,23 +1,9 @@
-"""Export processed meshes to PLY files with a JSON manifest."""
+"""Save processed meshes to PLY files with a JSON manifest."""
 
 import json
 from pathlib import Path
 
 import trimesh
-
-
-def export_mesh(mesh: trimesh.Trimesh, path: Path) -> None:
-    """Export a single mesh to PLY format.
-
-    Parameters
-    ----------
-    mesh:
-        The mesh to export.
-    path:
-        Output file path (should end in .ply).
-
-    """
-    mesh.export(str(path))
 
 
 def write_manifest(
@@ -27,12 +13,12 @@ def write_manifest(
     regions: list[dict],
     processing: dict,
 ) -> None:
-    """Write manifest.json summarizing the exported meshes.
+    """Write manifest.json summarizing the saved meshes.
 
     Parameters
     ----------
     output_dir:
-        Directory containing the exported PLY files.
+        Directory containing the saved PLY files.
     atlas_name:
         Name of the source atlas.
     species:
@@ -54,14 +40,14 @@ def write_manifest(
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
 
-def export_all(
+def save_meshes(
     output_dir: Path,
     atlas_name: str,
     species: str,
     meshes: list[tuple[dict, trimesh.Trimesh]],
     processing: dict,
 ) -> None:
-    """Export all meshes to PLY and write the manifest.
+    """Save all meshes to PLY and write the manifest.
 
     Parameters
     ----------
@@ -83,7 +69,7 @@ def export_all(
     for metadata, mesh in meshes:
         # Some acronyms contain "/" (e.g. layer 2/3), which isn't valid in a filename
         filename = f"{metadata['acronym'].replace('/', '_')}.ply"
-        export_mesh(mesh, output_dir / filename)
+        mesh.export(str(output_dir / filename))
         regions_manifest.append(
             {
                 **metadata,

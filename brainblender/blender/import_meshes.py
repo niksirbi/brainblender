@@ -42,9 +42,9 @@ def frame_viewport() -> None:
 
 
 def import_meshes(meshes_dir: Path, clear: bool = True) -> list[bpy.types.Object]:
-    """Import all meshes from a brainblender export directory.
+    """Import all meshes from a folder written by `brainblender fetch-meshes`.
 
-    Pass clear=False to keep existing objects, e.g. when combining several exports.
+    Pass clear=False to keep existing objects, e.g. when combining several folders.
     """
     manifest_path = meshes_dir / "manifest.json"
     with manifest_path.open() as f:

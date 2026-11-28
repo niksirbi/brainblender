@@ -17,17 +17,17 @@
 ```
 brainblender/
   __init__.py        # Package init
-  cli.py             # CLI subcommands: info, list-regions, fetch-template, fetch-annotation, export
+  cli.py             # CLI subcommands: info, list-regions, fetch-template, fetch-annotation, fetch-meshes, import-meshes
   atlas.py           # Atlas loading and region selection (explicit + hierarchy)
   mesh.py            # Smoothing, decimation, and normalization (trimesh)
-  export.py          # PLY export + manifest.json writing
+  save.py            # PLY saving + manifest.json writing
   blender/
     __init__.py
     import_meshes.py # Standalone Blender script (bpy + stdlib only)
     scene_setup.py   # Shared scene helpers: directions, camera, light, render
     palette.py       # Named colours shared across scenes
 scenes/<name>/       # One folder per scene workflow
-  run.sh             # Export meshes (uv/CLI), then launch Blender with scene.py
+  run.sh             # Fetch meshes (uv/CLI), then launch Blender with scene.py
   scene.py           # Runs inside Blender (bpy); reuses brainblender/blender helpers
                      # Scene data (meshes/, renders/) lives in $BRAINBLENDER_SCENES_DIR/<name>/
                      # (default ~/brainblender-scenes; set per machine, see README)
@@ -43,8 +43,8 @@ uv run brainblender info <atlas>                     # Print atlas metadata
 uv run brainblender list-regions <atlas> --depth 2   # Show region tree
 uv run brainblender fetch-template <atlas> --finest 2  # Download template levels s<max>..s2
 uv run brainblender fetch-annotation <atlas> --finest 2  # Same for the annotation (label) volume
-uv run brainblender export <atlas> --regions root  # Export pipeline (--max-faces, --smooth to override defaults)
-blender --python brainblender/blender/import_meshes.py -- ./meshes/  # Load into Blender
+uv run brainblender fetch-meshes <atlas> --regions root  # Mesh pipeline (--max-faces, --smooth to override defaults)
+uv run brainblender import-meshes ./meshes/  # Open Blender with the meshes (uses $BLENDER)
 uv sync --group dev                   # Install dependencies including dev tools
 uv run pre-commit install             # Set up pre-commit hooks (once after cloning)
 uv run pre-commit run --all-files     # Run all hooks manually

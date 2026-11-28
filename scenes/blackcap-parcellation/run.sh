@@ -1,5 +1,5 @@
 #!/bin/bash
-# Export the Eurasian blackcap regions two levels below root and render them.
+# Fetch the Eurasian blackcap regions two levels below root and render them.
 set -euo pipefail
 
 SCENE_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -19,7 +19,7 @@ fi
 # Regions two levels below root, or the leaf where a branch ends sooner: the leaves of
 # `brainblender list-regions eurasian_blackcap_25um --children-of root --depth 2`.
 # Deeper levels pick small nuclei that leave holes in their parent regions.
-uv run --project "$REPO_ROOT" brainblender export eurasian_blackcap_25um \
+uv run --project "$REPO_ROOT" brainblender fetch-meshes eurasian_blackcap_25um \
     --children-of root \
     --depth 2 \
     --output "$MESHES_DIR"

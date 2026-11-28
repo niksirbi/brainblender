@@ -3,7 +3,7 @@
 Brains are rescaled to a similar apparent size and laid out in centred rows.
 
 Run with: blender --background --python scene.py -- <meshes_dir> <output_png> <row>...
-where <meshes_dir> holds one brainblender export folder per atlas, and each
+where <meshes_dir> holds one fetch-meshes folder per atlas, and each
 <row> is a space-separated list of atlas names, from the top row down.
 """
 

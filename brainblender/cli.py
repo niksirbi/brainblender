@@ -1,6 +1,8 @@
 """CLI commands for brainblender."""
 
 import os
+import shutil
+import subprocess
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Annotated
@@ -17,10 +19,10 @@ from brainblender.atlas import (
     pyramid_levels,
     resolve_regions,
 )
-from brainblender.export import export_all
 from brainblender.mesh import decimate_many, to_trimesh
 from brainblender.mesh import normalize as normalize_mesh
 from brainblender.mesh import smooth as smooth_mesh
+from brainblender.save import save_meshes
 
 app = typer.Typer()
 
@@ -107,20 +109,20 @@ def fetch_annotation_cmd(
     typer.echo(f"Annotation at {_fetch(fetch_annotation, atlas_name, finest)}")
 
 
-@app.command()
-def export(
+@app.command("fetch-meshes")
+def fetch_meshes(
     atlas_name: Annotated[str, typer.Argument(help="BrainGlobe atlas name")],
     regions: Annotated[
         list[str] | None,
         typer.Option(
             "--regions",
             "-r",
-            help="Region acronyms to export (comma-separated or repeated)",
+            help="Region acronyms to fetch (comma-separated or repeated)",
         ),
     ] = None,
     children_of: Annotated[
         str | None,
-        typer.Option(help="Export children of this region"),
+        typer.Option(help="Fetch children of this region"),
     ] = None,
     hierarchy_depth: Annotated[
         int | None,
@@ -158,7 +160,7 @@ def export(
         Path, typer.Option("--output", "-o", help="Output directory")
     ] = Path("./meshes"),
 ) -> None:
-    """Fetch, process, and export region meshes as PLY files."""
+    """Fetch region meshes, decimate and smooth them, and save them as PLY files."""
     atlas = load_atlas(atlas_name)
 
     if regions:
@@ -198,11 +200,42 @@ def export(
         "smoothing_iterations": smooth_iterations,
         "smoothing_method": smooth_method if smooth_iterations > 0 else None,
     }
-    export_all(
+    save_meshes(
         output_dir=output,
         atlas_name=atlas_name,
         species=atlas.metadata["species"],
         meshes=meshes,
         processing=processing,
     )
-    typer.echo(f"Exported to {output}/")
+    typer.echo(f"Saved to {output}/")
+
+
+IMPORT_SCRIPT = Path(__file__).parent / "blender" / "import_meshes.py"
+
+
+@app.command("import-meshes")
+def import_meshes(
+    meshes_dir: Annotated[
+        Path, typer.Argument(help="Folder written by fetch-meshes")
+    ] = Path("./meshes"),
+) -> None:
+    """Open Blender with the fetched meshes imported.
+
+    Runs the Blender executable named by the BLENDER environment variable,
+    or `blender` if it is unset.
+    """
+    if not (meshes_dir / "manifest.json").exists():
+        raise typer.BadParameter(
+            f"no manifest.json in {meshes_dir}; run fetch-meshes first",
+            param_hint="MESHES_DIR",
+        )
+    blender = os.environ.get("BLENDER") or "blender"
+    if shutil.which(blender) is None:
+        typer.echo(
+            f"Blender not found ({blender!r}): put 'blender' on your PATH "
+            "or set BLENDER (see README)",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    args = [blender, "--python", str(IMPORT_SCRIPT), "--", str(meshes_dir.resolve())]
+    raise typer.Exit(code=subprocess.run(args).returncode)

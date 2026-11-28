@@ -6,7 +6,7 @@ from pathlib import Path
 import bpy
 from mathutils import Vector
 
-# Anatomical directions in Blender space, as exported by brainblender.mesh.normalize.
+# Anatomical directions in Blender space, as produced by brainblender.mesh.normalize.
 RIGHT = Vector((1, 0, 0))
 ANTERIOR = Vector((0, 1, 0))
 SUPERIOR = Vector((0, 0, 1))

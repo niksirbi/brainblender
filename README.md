@@ -10,7 +10,7 @@ if you are looking for that.
 ## Key features
 
 - Explore [BrainGlobe atlases](https://brainglobe.info/documentation/brainglobe-atlasapi/index.html) and their region hierarchies on the command line.
-- Export region meshes to PLY files, with configurable decimation and smoothing.
+- Fetch region meshes as PLY files, with configurable decimation and smoothing.
 - Fetch template and annotation volumes as OME-Zarr files, up to the desired spatial resolution.
 - Import meshes and volumes into Blender.
 - Construct reproducible Blender scenes with camera, lighting, and render settings.
@@ -31,7 +31,7 @@ blender --version
 ```
 
 If `blender` is a shell alias rather than an executable on your `PATH`,
-it may work in your terminal but the [scene](#scenes) scripts won't find it.
+it may work in your terminal but `brainblender import-meshes` and the [scene](#scenes) scripts won't find it.
 In that case, set the `BLENDER` environment variable to the Blender executable
 in your shell configuration file (e.g. `~/.zshrc` or `~/.bashrc`).
 For example, on macOS:
@@ -103,31 +103,30 @@ uv run brainblender list-regions allen_mouse_50um --children-of grey --depth 2
 
 ### Working with meshes
 
-The `brainblender export` command fetches, decimates, smooths, and saves
+The `brainblender fetch-meshes` command fetches, decimates, smooths, and saves
 region meshes as PLY files.
 
-To export meshes for specific regions:
+To fetch meshes for specific regions:
 
 ```bash
-uv run brainblender export eurasian_blackcap_25um --regions root,HVC,RA
+uv run brainblender fetch-meshes eurasian_blackcap_25um --regions root,HVC,RA
 ```
 
-To export meshes for all children of a region:
+To fetch meshes for all children of a region:
 
 ```bash
-uv run brainblender export eurasian_blackcap_25um --children-of root --depth 1 --output ./level1_meshes
+uv run brainblender fetch-meshes eurasian_blackcap_25um --children-of root --depth 1 --output ./level1_meshes
 ```
 
 These commands create a directory with one `.ply` file per region as well as
-a `manifest.json` describing the export. By default, the meshes are saved
+a `manifest.json` describing the meshes. By default, the meshes are saved
 to `./meshes/` in the current working directory, but you can change this
 with the `--output` argument.
 
-With `--children-of` and `--depth N`, the export takes the regions
+With `--children-of` and `--depth N`, the command takes the regions
 `N` levels below the parent. If a given branch of the hierarchy ends sooner
-than `N`, the export takes the leaf region instead (i.e. the deepest region
-reached in that branch). This ensures that the whole parent region is covered
-by the export.
+than `N`, it takes the leaf region instead (i.e. the deepest region
+reached in that branch). This ensures that the meshes cover the whole parent region.
 
 By default, meshes with more than 100,000 faces are decimated down to that number,
 and every mesh then gets 5 iterations of Taubin smoothing.
@@ -140,15 +139,13 @@ Meshes are decimated in parallel, using one process per CPU core by default
 (set the number of processes with the `--jobs` argument;
 `--jobs 1` turns parallelisation off).
 
-To import the exported meshes into Blender, run the following command
-from the root of the repository, making sure to adjust the path to the
-exported meshes (depending on your `--output` argument above):
+To open Blender with the fetched meshes imported:
 
 ```bash
-blender --python brainblender/blender/import_meshes.py -- ./meshes/
+uv run brainblender import-meshes ./meshes/
 ```
 
-This imports all exported meshes, assigns material colours from the atlas, and groups them into a collection.
+This imports all meshes in the folder, assigns material colours from the atlas, and groups them into a collection.
 
 ### Working with volumes
 
@@ -184,7 +181,7 @@ see the relevant
 
 The `scenes/` directory holds complete workflows, one folder per Blender scene:
 
-- `run.sh` fetches and exports atlas components with the `brainblender` CLI, then launches Blender with `scene.py`.
+- `run.sh` fetches atlas components with the `brainblender` CLI, then launches Blender with `scene.py`.
 - `scene.py` runs inside Blender, sets up the scene and renders an image.
 
 ### Choosing where scene outputs go

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Export the root meshes of atlases from different species and render them in a grid.
+# Fetch the root meshes of atlases from different species and render them in a grid.
 set -euo pipefail
 
 SCENE_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -27,7 +27,7 @@ ROWS=(
 
 for row in "${ROWS[@]}"; do
     for atlas in $row; do
-        uv run --project "$REPO_ROOT" brainblender export "$atlas" \
+        uv run --project "$REPO_ROOT" brainblender fetch-meshes "$atlas" \
             --regions root \
             --output "$MESHES_DIR/$atlas"
     done

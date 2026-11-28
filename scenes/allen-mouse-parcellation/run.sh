@@ -1,5 +1,5 @@
 #!/bin/bash
-# Export the Allen mouse grey matter regions five levels below grey and render them.
+# Fetch the Allen mouse grey matter regions five levels below grey and render them.
 set -euo pipefail
 
 SCENE_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -19,7 +19,7 @@ fi
 # Regions five levels below grey, or the leaf where a branch ends sooner: the leaves of
 # `brainblender list-regions allen_mouse_25um --children-of grey --depth 5`.
 # For the cortex, that's the cortical areas (e.g. MO, SS, VIS).
-uv run --project "$REPO_ROOT" brainblender export allen_mouse_25um \
+uv run --project "$REPO_ROOT" brainblender fetch-meshes allen_mouse_25um \
     --children-of grey \
     --depth 5 \
     --output "$MESHES_DIR"
